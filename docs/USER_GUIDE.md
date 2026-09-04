@@ -51,7 +51,7 @@ Presets do not apply equalization or change the sound profile.
 
 ### Acoustic Engine
 
-Creative's Acoustic Engine effects run in the Creative audio driver on the PC and shape everything that plays through the Pebble X Plus. The **Acoustic Engine** panel controls the same settings as Creative App's Acoustic Engine page.
+Creative's Acoustic Engine effects run in the Creative audio driver on the PC and shape everything that plays through the Pebble X Plus. The **Acoustic Engine** panel controls the same settings as Creative App's Acoustic Engine page. This panel needs Creative App installed, because the driver that does the processing ships with it; without it the panel stays empty.
 
 - **Processing** at the top turns all effects on or off at once. Turning on any effect turns processing on.
 - **Speakers** and **Headphones** hold separate settings; pick the one that matches how you listen.

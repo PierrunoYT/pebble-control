@@ -30,8 +30,19 @@ With a Creative Pebble X Plus connected by USB:
 
 - Windows 10 or Windows 11
 - A Creative Pebble speaker connected and selected as the Windows output device
-- A Creative Pebble X Plus connected by USB for RGB controls
+- A Creative Pebble X Plus connected by USB for the lighting, output, microphone, and device panels
+- [Creative App](https://support.creative.com/) installed for the Acoustic Engine and equalizer panels
 - Node.js and npm only when running from source
+
+### Dependency on Creative App
+
+Pebble Control does not replace Creative App; part of it builds on Creative's software.
+
+- The Acoustic Engine effects and the equalizer are processing inside Creative's USB audio driver. Pebble Control only changes their settings, so without that driver those panels stay empty and the sound is unprocessed. The driver comes with Creative App, and the panels also read Creative App's factory equalizer presets from its data folder.
+- Windows audio, RGB lighting, the speaker or headphone switch, the microphone panel, and the device panel talk to Windows and to the speaker directly and work without Creative App.
+- Firmware updates, driver updates, and the factory reset remain Creative App features.
+
+Both apps write the same settings, so changes made in one show up in the other.
 
 ## Install
 
