@@ -66,6 +66,7 @@ Connect the Creative Pebble X Plus directly by USB. The Ambient lighting panel b
 - Drag **Brightness** to set the hardware brightness from 0 to 255.
 - Pick the effect's colors from the color wells. Static, Glowing, Wave, and Peak Meter use a five-stop gradient that blends across both speakers; Morph and Chasers use one color; Cycle and Aurora have no adjustable colors.
 - Use **Use one color for all stops** to turn a gradient into a single flat color, then adjust any stop to bring the gradient back.
+- Morph shows two wells: the color it starts from and the color it fades to.
 
 Both speakers always show the same lighting. The Pebble X Plus does not support different colors on the left and right speaker.
 

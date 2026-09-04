@@ -154,11 +154,12 @@ function colorsFromPayload(payload) {
   return colors;
 }
 
-function readColors(device, activeIndex) {
+// Reads a colour list (type 1, or type 2 for Morph's second colour). Effects
+// without that list reject the query, which yields an empty array.
+function readColors(device, activeIndex, type = CUSTOMIZATION.color) {
   try {
-    return colorsFromPayload(query(device, [OPERATION.getCustomization, activeIndex, CUSTOMIZATION.color]));
+    return colorsFromPayload(query(device, [OPERATION.getCustomization, activeIndex, type]));
   } catch (error) {
-    // Cycle and Aurora carry no color list; the speaker rejects the query.
     return [];
   }
 }
@@ -248,6 +249,7 @@ async function getState() {
     const activeIndex = query(device, [OPERATION.getActiveIndex])[1];
     const mode = query(device, [OPERATION.getMode, activeIndex])[2];
     const colors = readColors(device, activeIndex);
+    const colors2 = readColors(device, activeIndex, CUSTOMIZATION.color2);
     const speed = readSpeed(device, activeIndex);
     const direction = readDirection(device, activeIndex);
     const directionSupport = direction ? readDirectionSupport(device, mode) : null;
@@ -264,6 +266,7 @@ async function getState() {
       mode,
       color: colors[0] || '#ffffff',
       colors,
+      colors2,
       speed,
       speeds: SPEED_PRESETS,
       direction,
@@ -308,6 +311,7 @@ function setMode(requestedMode) {
     return {
       mode,
       colors,
+      colors2: readColors(device, activeIndex, CUSTOMIZATION.color2),
       color: colors[0] || '#ffffff',
       speed: readSpeed(device, activeIndex),
       direction,
@@ -350,28 +354,42 @@ function setSpeed(requestedSpeed) {
   });
 }
 
-function writeColors(device, activeIndex, colors) {
-  const current = readColors(device, activeIndex);
+function writeColors(device, activeIndex, colors, type = CUSTOMIZATION.color) {
+  const current = readColors(device, activeIndex, type);
   if (current.length === 0) throw new TypeError('The active lighting effect has no adjustable colors');
   if (colors.length !== current.length) {
     throw new RangeError(`The active lighting effect needs exactly ${current.length} colors`);
   }
   // Payload: starting group ID (1), then one little-endian RGBA word per group.
-  update(device, [OPERATION.setCustomization, activeIndex, CUSTOMIZATION.color, 1, ...colors.flatMap(colorToBytes)]);
+  update(device, [OPERATION.setCustomization, activeIndex, type, 1, ...colors.flatMap(colorToBytes)]);
   return colors.map((color) => color.toLowerCase());
+}
+
+function validateColorList(requestedColors) {
+  if (!Array.isArray(requestedColors) || requestedColors.length === 0 || requestedColors.length > 16) {
+    throw new TypeError('Colors must be a non-empty array');
+  }
+  requestedColors.forEach(colorToBytes);
 }
 
 // Replaces the color list of the active effect. Static, Glowing, Wave, and Peak
 // Meter hold five gradient stops; Morph and Chasers hold one color.
 function setColors(requestedColors) {
-  if (!Array.isArray(requestedColors) || requestedColors.length === 0 || requestedColors.length > 16) {
-    throw new TypeError('Colors must be a non-empty array');
-  }
-  requestedColors.forEach(colorToBytes);
+  validateColorList(requestedColors);
   return withDevice((device) => {
     const activeIndex = query(device, [OPERATION.getActiveIndex])[1];
     const mode = query(device, [OPERATION.getMode, activeIndex])[2];
     return { colors: writeColors(device, activeIndex, requestedColors), mode };
+  });
+}
+
+// Replaces Morph's second color, the one it fades to.
+function setColors2(requestedColors) {
+  validateColorList(requestedColors);
+  return withDevice((device) => {
+    const activeIndex = query(device, [OPERATION.getActiveIndex])[1];
+    const mode = query(device, [OPERATION.getMode, activeIndex])[2];
+    return { colors2: writeColors(device, activeIndex, requestedColors, CUSTOMIZATION.color2), mode };
   });
 }
 
@@ -409,5 +427,5 @@ function setOutputTarget(requestedTarget) {
 }
 
 module.exports = {
-  getState, setEnabled, setBrightness, setMode, setColor, setColors, setSpeed, setDirection, setOutputTarget
+  getState, setEnabled, setBrightness, setMode, setColor, setColors, setColors2, setSpeed, setDirection, setOutputTarget
 };

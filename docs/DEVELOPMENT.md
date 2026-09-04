@@ -126,6 +126,7 @@ The window uses `contextIsolation`, disables renderer Node.js integration, and r
 | `setLightingMode(mode)` | `{ mode, colors, color, speed, direction, directionSupport }` | Select a validated, device-supported effect and return its color list, speed, and direction |
 | `setLightingColor(color)` | `{ color, colors, mode }` | Switch to Static and fill every gradient stop with one `#RRGGBB` color |
 | `setLightingColors(colors)` | `{ colors, mode }` | Replace the active effect's color list; the length must match what the effect holds |
+| `setLightingColors2(colors)` | `{ colors2, mode }` | Replace Morph's second color list (customization type 2) |
 | `setLightingSpeed(speed)` | `{ speed, mode }` | Set the active effect's speed to one of the seven firmware presets in milliseconds |
 | `setLightingDirection({ direction, bouncing })` | `{ direction, directionSupport, mode }` | Set the active effect's direction (1 to 4) and bounce flag, validated against the effect's capability record |
 | `setOutputTarget(target)` | `{ outputTarget, outputTargets }` | Route audio to the speakers (`2`) or the headphone jack (`4`) |

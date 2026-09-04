@@ -19,6 +19,7 @@ const lightingDirectionField = document.querySelector('#lightingDirectionField')
 
 const DIRECTION_LABELS = { 1: 'Left to right', 2: 'Right to left', 3: 'Top to bottom', 4: 'Bottom to top' };
 const lightingColors = document.querySelector('#lightingColors');
+const lightingColors2 = document.querySelector('#lightingColors2');
 const lightingColorsTitle = document.querySelector('#lightingColorsTitle');
 const lightingColorsHint = document.querySelector('#lightingColorsHint');
 const lightingMatchColors = document.querySelector('#lightingMatchColors');
@@ -30,7 +31,7 @@ const lightingBrightnessValue = document.querySelector('#lightingBrightnessValue
 let state = { volume: 50, muted: false };
 let volumeTimer;
 let isAdjusting = false;
-let lightingState = { connected: false, enabled: false, brightness: 255, mode: 11, color: '#ffffff', colors: [] };
+let lightingState = { connected: false, enabled: false, brightness: 255, mode: 11, color: '#ffffff', colors: [], colors2: [] };
 let colorTimer;
 let lastColorEdit = 0;
 let brightnessTimer;
@@ -63,7 +64,10 @@ function renderLighting(nextState) {
   lightingSpeed.setAttribute('aria-disabled', String(!hasSpeed));
   if (hasSpeed) lightingSpeed.value = String(lightingState.speed);
   renderDirection();
-  renderColorStops(Array.isArray(lightingState.colors) ? lightingState.colors : []);
+  renderColorStops(
+    Array.isArray(lightingState.colors) ? lightingState.colors : [],
+    Array.isArray(lightingState.colors2) ? lightingState.colors2 : []
+  );
   renderOutputTarget(connected);
   lightingBrightness.value = lightingState.brightness;
   lightingBrightness.style.setProperty('--volume', `${(lightingState.brightness / 255) * 100}%`);
@@ -113,29 +117,37 @@ function renderOutputTarget(connected) {
   });
 }
 
-function renderColorStops(colors) {
-  const wells = [...lightingColors.querySelectorAll('input')];
+function fillColorWells(container, colors, labelFor) {
+  const wells = [...container.querySelectorAll('input')];
   if (wells.length !== colors.length) {
-    lightingColors.replaceChildren(...colors.map((color, index) => {
+    container.replaceChildren(...colors.map((color, index) => {
       const well = document.createElement('label');
       well.className = 'color-well';
       const input = document.createElement('input');
       input.type = 'color';
       input.value = color;
       input.dataset.index = String(index);
-      input.setAttribute('aria-label', colors.length > 1 ? `Gradient stop ${index + 1}` : 'Effect color');
+      input.setAttribute('aria-label', labelFor(index));
       well.append(input);
       return well;
     }));
   } else {
     wells.forEach((input, index) => { input.value = colors[index]; });
   }
+  container.classList.toggle('single', colors.length === 1);
+}
 
-  lightingColors.classList.toggle('single', colors.length === 1);
+function renderColorStops(colors, colors2) {
+  fillColorWells(lightingColors, colors, (index) => (colors.length > 1 ? `Gradient stop ${index + 1}` : 'Effect color'));
+  fillColorWells(lightingColors2, colors2, () => 'Second effect color');
+
   lightingMatchColors.hidden = colors.length < 2;
   if (colors.length > 1) {
     lightingColorsTitle.textContent = 'Gradient';
     lightingColorsHint.textContent = `${colors.length} stops blend across both speakers`;
+  } else if (colors.length === 1 && colors2.length === 1) {
+    lightingColorsTitle.textContent = 'Morph colors';
+    lightingColorsHint.textContent = 'Fades from the first color to the second';
   } else if (colors.length === 1) {
     lightingColorsTitle.textContent = 'Effect color';
     lightingColorsHint.textContent = 'Both speakers use this color';
@@ -319,6 +331,27 @@ lightingColors.addEventListener('input', (event) => {
   const colors = [...lightingState.colors];
   colors[Number(input.dataset.index)] = input.value;
   applyColors(colors);
+});
+
+let colors2Timer;
+lightingColors2.addEventListener('pointerdown', () => { isAdjustingLighting = true; });
+lightingColors2.addEventListener('input', (event) => {
+  const input = event.target;
+  if (!(input instanceof HTMLInputElement)) return;
+  const colors2 = [...lightingState.colors2];
+  colors2[Number(input.dataset.index)] = input.value;
+  lastColorEdit = Date.now();
+  renderLighting({ colors2 });
+  clearTimeout(colors2Timer);
+  colors2Timer = setTimeout(async () => {
+    try {
+      renderLighting(await window.pebble.setLightingColors2(colors2));
+      lightingStatus.textContent = 'Second color applied';
+    } catch (error) {
+      lightingStatus.textContent = 'Could not change the second color';
+      await syncLighting();
+    }
+  }, 100);
 });
 
 outputTargetButtons.forEach((button) => {

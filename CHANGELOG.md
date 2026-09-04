@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Direct Creative Pebble X Plus RGB power, brightness, effect, and color controls, including the five-stop gradient used by Static, Glowing, Wave, and Peak Meter.
 - Effect speed selector with the seven firmware presets from Slowest to Fastest.
 - Effect direction selector for Wave, Chasers, and Peak Meter, built from each effect's capability record.
+- Second color well for Morph's fade target.
 - Speaker or headphone output switch for the Pebble X Plus over USB.
 - Device-scoped HID transport with response validation and a restricted Electron IPC bridge.
 

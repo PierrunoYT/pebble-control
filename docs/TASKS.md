@@ -10,7 +10,7 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
 - [x] **Direction control**
   Add a direction selector using customization type 4 with a direction byte and a bounce byte. Wave offers left, right, up, down, and bounce; Chasers offers left, right, and bounce; Peak Meter offers up and down. Hide the bounce option when the capability mask lacks bit 2.
 
-- [ ] **Morph second colour**
+- [x] **Morph second colour**
   Read and write customization type 2 for Morph so both fade colours can be edited. Show a second well next to the first one only when the effect is Morph.
 
 - [ ] **Capability-driven controls**
