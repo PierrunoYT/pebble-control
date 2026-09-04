@@ -114,6 +114,10 @@ Bluetooth latency is determined by the Bluetooth connection and audio codec. Peb
 
 Check **Settings > Apps > Startup** and ensure Pebble Control is enabled. Corporate device policies may prevent applications from adding themselves to startup.
 
+### The Output Pill Is Amber
+
+The pill in the top bar shows the Windows default output. It turns amber, and the bottom bar reads "Not a Pebble", when that output is not a Creative Pebble device. Volume changes still apply to whatever Windows is using. Pick the Pebble in Windows sound settings to route audio to the speakers; the pill updates as soon as the default output changes.
+
 ### Lighting Controls Are Unavailable
 
 1. Confirm the speaker is a Creative Pebble X Plus.

@@ -144,7 +144,7 @@ The lighting panel is capability driven: the effect list is built from the modes
 
 `src/renderer.js` maintains the displayed volume and mute state. It polls the operating system every 2.5 seconds so external volume changes are reflected in the interface. Slider writes are briefly debounced to avoid launching excessive system volume operations.
 
-The renderer uses `navigator.mediaDevices.enumerateDevices()` only to display an output label. Audio control does not depend on device enumeration.
+The renderer uses `navigator.mediaDevices.enumerateDevices()` only to display an output label and to warn when that label does not name a Pebble. It re-checks on the `devicechange` event. Audio control does not depend on device enumeration.
 
 ## Commands
 

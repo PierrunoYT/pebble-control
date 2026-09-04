@@ -38,7 +38,7 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
 - [x] **Keyboard shortcuts**
   Global shortcuts for volume up, volume down, and mute.
 
-- [ ] **Output device check**
+- [x] **Output device check**
   Warn when the active Windows output is not a Creative Pebble device.
 
 - [ ] **Tests for the lighting module**

@@ -6,6 +6,7 @@ const syncStatus = document.querySelector('#syncStatus');
 const deviceStatus = document.querySelector('#deviceStatus');
 const deviceName = document.querySelector('#deviceName');
 const outputDetail = document.querySelector('#outputDetail');
+const outputLabel = document.querySelector('#outputLabel');
 const presets = [...document.querySelectorAll('.preset')];
 const lightingCard = document.querySelector('#lightingCard');
 const lightingControls = document.querySelector('#lightingControls');
@@ -225,6 +226,12 @@ async function syncAudio() {
   }
 }
 
+// Creative names the Pebble endpoints after the product, so the label is
+// enough to tell whether Windows is actually sending audio to the speakers.
+function isPebbleOutput(label) {
+  return /pebble/i.test(label);
+}
+
 async function findDefaultOutput() {
   try {
     const devices = await navigator.mediaDevices.enumerateDevices();
@@ -232,8 +239,12 @@ async function findDefaultOutput() {
       || devices.find((device) => device.kind === 'audiooutput');
     if (!output?.label) return;
     const label = output.label.replace(/^Default\s*-\s*/i, '');
+    const pebble = isPebbleOutput(label);
     deviceName.textContent = label;
     outputDetail.textContent = label;
+    deviceStatus.classList.toggle('warning', !pebble);
+    deviceStatus.title = pebble ? '' : 'Windows is not sending audio to a Creative Pebble';
+    outputLabel.textContent = pebble ? 'ACTIVE OUTPUT' : 'ACTIVE OUTPUT · NOT A PEBBLE';
   } catch (error) {
     // The generic Windows label remains accurate when device enumeration is unavailable.
   }
@@ -467,6 +478,7 @@ async function initialize() {
   window.setInterval(syncAudio, 2500);
   window.setInterval(syncLighting, 5000);
   window.pebble.onAudioChanged(syncAudio);
+  navigator.mediaDevices.addEventListener('devicechange', findDefaultOutput);
   window.pebble.onLightingPresence(async (connected) => {
     if (!connected) {
       renderLighting({ connected: false });

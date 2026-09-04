@@ -8,7 +8,7 @@ A lightweight Windows desktop companion for Creative Pebble speakers. Pebble Con
 
 - Master volume and mute control
 - Late night, everyday, and immersive volume presets
-- Active Windows audio output label
+- Active Windows audio output label with a warning when it is not a Pebble
 - Optional launch at login
 - Tray icon with mute and lighting shortcuts; closing the window keeps it running
 - Global keyboard shortcuts for volume and mute

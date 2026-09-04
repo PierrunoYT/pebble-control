@@ -54,6 +54,8 @@ select { color: inherit; font: inherit; }
 .device-status span:last-child { overflow: hidden; text-overflow: ellipsis; }
 .status-dot { flex: 0 0 auto; width: 7px; height: 7px; border-radius: 50%; background: var(--acid); box-shadow: 0 0 12px var(--acid); }
 .device-status.error .status-dot { background: #ef846f; box-shadow: 0 0 12px #ef846f; }
+.device-status.warning .status-dot { background: #f2c14e; box-shadow: 0 0 12px #f2c14e; }
+.device-status.warning { border-color: rgba(242,193,78,.4); }
 
 .hero { display: grid; grid-template-columns: 1.03fr 0.97fr; align-items: center; min-height: 335px; padding: 34px 0 20px; }
 .eyebrow, .label { margin: 0; color: var(--acid); font-family: 'Segoe UI Variable Display', 'Segoe UI', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.19em; }
