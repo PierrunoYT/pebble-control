@@ -11,5 +11,6 @@ contextBridge.exposeInMainWorld('pebble', {
   setLightingBrightness: (brightness) => ipcRenderer.invoke('lighting:set-brightness', brightness),
   setLightingMode: (mode) => ipcRenderer.invoke('lighting:set-mode', mode),
   setLightingColor: (color) => ipcRenderer.invoke('lighting:set-color', color),
-  setLightingColors: (colors) => ipcRenderer.invoke('lighting:set-colors', colors)
+  setLightingColors: (colors) => ipcRenderer.invoke('lighting:set-colors', colors),
+  setOutputTarget: (target) => ipcRenderer.invoke('device:set-output-target', target)
 });

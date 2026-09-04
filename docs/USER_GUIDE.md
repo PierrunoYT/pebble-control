@@ -47,6 +47,10 @@ Presets are fixed volume shortcuts. Selecting one also unmutes the output.
 
 Presets do not apply equalization or change the sound profile.
 
+### Speaker Output
+
+When a Creative Pebble X Plus is connected by USB, a **Speaker output** switch appears in the bottom bar. Choose **Speakers** to play through the satellites or **Headphones** to route audio to the headphone jack on the right speaker. The switch is hidden for other connections.
+
 ### Launch at Startup
 
 Enable **Launch at startup** to open Pebble Control when you sign in to Windows. Disable it at any time from the same switch.

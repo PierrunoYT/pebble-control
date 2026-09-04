@@ -143,6 +143,13 @@
           <span class="utility-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span>
           <span><small>ACTIVE OUTPUT</small><strong id="outputDetail">Windows default output</strong></span>
         </div>
+        <div class="output-target" id="outputTarget" hidden>
+          <small>SPEAKER OUTPUT</small>
+          <div class="segmented" role="group" aria-label="Speaker output">
+            <button type="button" data-target="2" aria-pressed="false">Speakers</button>
+            <button type="button" data-target="4" aria-pressed="false">Headphones</button>
+          </div>
+        </div>
         <label class="launch-setting">
           <span><strong>Launch at startup</strong><small>Keep controls close</small></span>
           <input id="launchToggle" type="checkbox">

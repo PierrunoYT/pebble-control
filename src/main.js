@@ -55,6 +55,7 @@ ipcMain.handle('lighting:set-brightness', (_event, brightness) => lighting.setBr
 ipcMain.handle('lighting:set-mode', (_event, mode) => lighting.setMode(mode));
 ipcMain.handle('lighting:set-color', (_event, color) => lighting.setColor(color));
 ipcMain.handle('lighting:set-colors', (_event, colors) => lighting.setColors(colors));
+ipcMain.handle('device:set-output-target', (_event, target) => lighting.setOutputTarget(target));
 
 app.whenReady().then(() => {
   createWindow();

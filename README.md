@@ -11,6 +11,7 @@ A lightweight Windows desktop companion for Creative Pebble speakers. Pebble Con
 - Active Windows audio output label
 - Optional launch at login
 - Pebble X Plus RGB power, brightness, effect, and gradient color control over USB
+- Pebble X Plus speaker or headphone output switch over USB
 - Responsive desktop interface
 
 ## Requirements

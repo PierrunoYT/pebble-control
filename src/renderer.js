@@ -16,6 +16,8 @@ const lightingColors = document.querySelector('#lightingColors');
 const lightingColorsTitle = document.querySelector('#lightingColorsTitle');
 const lightingColorsHint = document.querySelector('#lightingColorsHint');
 const lightingMatchColors = document.querySelector('#lightingMatchColors');
+const outputTarget = document.querySelector('#outputTarget');
+const outputTargetButtons = [...outputTarget.querySelectorAll('button')];
 const lightingBrightness = document.querySelector('#lightingBrightness');
 const lightingBrightnessValue = document.querySelector('#lightingBrightnessValue');
 
@@ -50,6 +52,7 @@ function renderLighting(nextState) {
   lightingToggle.checked = connected && lightingState.enabled;
   lightingMode.value = String(lightingState.mode);
   renderColorStops(Array.isArray(lightingState.colors) ? lightingState.colors : []);
+  renderOutputTarget(connected);
   lightingBrightness.value = lightingState.brightness;
   lightingBrightness.style.setProperty('--volume', `${(lightingState.brightness / 255) * 100}%`);
   lightingBrightnessValue.textContent = lightingState.brightness;
@@ -59,6 +62,16 @@ function renderLighting(nextState) {
       option.disabled = !lightingState.supportedModes.includes(Number(option.value));
     });
   }
+}
+
+function renderOutputTarget(connected) {
+  const targets = Array.isArray(lightingState.outputTargets) ? lightingState.outputTargets : [];
+  outputTarget.hidden = !connected || targets.length === 0;
+  outputTargetButtons.forEach((button) => {
+    const target = Number(button.dataset.target);
+    button.disabled = !targets.includes(target);
+    button.setAttribute('aria-pressed', String(target === lightingState.outputTarget));
+  });
 }
 
 function renderColorStops(colors) {
@@ -238,6 +251,22 @@ lightingColors.addEventListener('input', (event) => {
   const colors = [...lightingState.colors];
   colors[Number(input.dataset.index)] = input.value;
   applyColors(colors);
+});
+
+outputTargetButtons.forEach((button) => {
+  button.addEventListener('click', async () => {
+    const target = Number(button.dataset.target);
+    if (target === lightingState.outputTarget) return;
+    const previous = lightingState.outputTarget;
+    renderLighting({ outputTarget: target });
+    try {
+      renderLighting(await window.pebble.setOutputTarget(target));
+      lightingStatus.textContent = `Audio routed to ${button.textContent.toLowerCase()}`;
+    } catch (error) {
+      renderLighting({ outputTarget: previous });
+      lightingStatus.textContent = 'Could not change speaker output';
+    }
+  });
 });
 
 lightingMatchColors.addEventListener('click', () => {

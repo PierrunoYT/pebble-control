@@ -8,7 +8,11 @@ const DEVICE = Object.freeze({
   reportId: 0x03
 });
 
-const COMMAND = Object.freeze({ acknowledge: 0x02, ledControl: 0x3a });
+const COMMAND = Object.freeze({ acknowledge: 0x02, outputTarget: 0x2c, ledControl: 0x3a });
+
+// SpeakerOutputTargetSelectionControl masks. The Pebble X Plus reports 2 and 4.
+const OUTPUT_TARGETS = Object.freeze({ 2: 'Speakers', 4: 'Headphones' });
+const OUTPUT_OPERATION = Object.freeze({ set: 0x00, get: 0x01, getSupported: 0x02 });
 const OPERATION = Object.freeze({
   getInfo: 0x20,
   getSupportedModes: 0x21,
@@ -47,11 +51,11 @@ function findDevice() {
   ));
 }
 
-function encode(payload) {
+function encode(payload, command = COMMAND.ledControl) {
   return [
     DEVICE.reportId,
     0x6a,
-    COMMAND.ledControl,
+    command,
     payload.length & 0xff,
     payload.length >> 8,
     ...payload
@@ -76,40 +80,61 @@ function waitFor(device, predicate) {
   throw new Error('The speaker did not respond');
 }
 
-function isRejection(response, operation) {
+function isRejection(response, operation, command) {
   return response.command === COMMAND.acknowledge
-    && response.payload[0] === COMMAND.ledControl
+    && response.payload[0] === command
     && response.payload[2] === operation
     && response.payload[1] !== 0;
 }
 
-function query(device, payload) {
-  device.write(encode(payload));
+function query(device, payload, command = COMMAND.ledControl) {
+  device.write(encode(payload, command));
   const operation = payload[0];
-  const index = payload.length > 1 ? payload[1] : null;
+  const index = command === COMMAND.ledControl && payload.length > 1 ? payload[1] : null;
   const response = waitFor(device, (candidate) => (
-    isRejection(candidate, operation) || (
-      candidate.command === COMMAND.ledControl
+    isRejection(candidate, operation, command) || (
+      candidate.command === command
       && candidate.payload[0] === operation
       && (index === null || candidate.payload[1] === index)
     )
   ));
-  if (response[0] === COMMAND.ledControl && response[2] === operation && response.length === 3) {
-    throw new Error(`The speaker rejected the lighting query (0x${response[1].toString(16)})`);
+  if (response[0] === command && response[2] === operation && response.length === 3) {
+    throw new Error(`The speaker rejected the query (0x${response[1].toString(16)})`);
   }
   return response;
 }
 
-function update(device, payload) {
-  device.write(encode(payload));
+function update(device, payload, command = COMMAND.ledControl) {
+  device.write(encode(payload, command));
   const operation = payload[0];
   const acknowledgement = waitFor(device, (response) => (
     response.command === COMMAND.acknowledge
-    && response.payload[0] === COMMAND.ledControl
+    && response.payload[0] === command
     && response.payload[2] === operation
   ));
   if (acknowledgement[1] !== 0) {
-    throw new Error(`The speaker rejected the lighting command (0x${acknowledgement[1].toString(16)})`);
+    throw new Error(`The speaker rejected the command (0x${acknowledgement[1].toString(16)})`);
+  }
+}
+
+function maskFromPayload(payload, offset) {
+  return (payload[offset] | (payload[offset + 1] << 8) | (payload[offset + 2] << 16) | (payload[offset + 3] << 24)) >>> 0;
+}
+
+// Reads the current output target mask and the masks the speaker supports.
+function readOutputTargets(device) {
+  try {
+    const current = query(device, [OUTPUT_OPERATION.get], COMMAND.outputTarget);
+    const supported = query(device, [OUTPUT_OPERATION.getSupported], COMMAND.outputTarget);
+    const count = supported[1] & 0x7f;
+    const outputTargets = [];
+    for (let i = 0; i < count && 2 + i * 4 + 4 <= supported.length; i += 1) {
+      const mask = maskFromPayload(supported, 2 + i * 4);
+      if (Object.hasOwn(OUTPUT_TARGETS, mask)) outputTargets.push(mask);
+    }
+    return { outputTarget: maskFromPayload(current, 1), outputTargets };
+  } catch (error) {
+    return { outputTarget: null, outputTargets: [] };
   }
 }
 
@@ -176,8 +201,11 @@ async function getState() {
     const activeIndex = query(device, [OPERATION.getActiveIndex])[1];
     const mode = query(device, [OPERATION.getMode, activeIndex])[2];
     const colors = readColors(device, activeIndex);
+    const output = readOutputTargets(device);
 
     return {
+      ...output,
+      outputTargetNames: OUTPUT_TARGETS,
       connected: true,
       deviceName: 'Creative Pebble X Plus',
       enabled,
@@ -269,4 +297,19 @@ function setColor(color) {
   });
 }
 
-module.exports = { getState, setEnabled, setBrightness, setMode, setColor, setColors };
+// Routes audio to the speakers (2) or the headphone jack (4).
+function setOutputTarget(requestedTarget) {
+  const target = Number(requestedTarget);
+  if (!Number.isInteger(target) || !Object.hasOwn(OUTPUT_TARGETS, target)) {
+    throw new TypeError('Unsupported output target');
+  }
+  return withDevice((device) => {
+    const { outputTargets } = readOutputTargets(device);
+    if (!outputTargets.includes(target)) throw new TypeError('This speaker does not support that output');
+    const mask = [target & 0xff, (target >> 8) & 0xff, (target >> 16) & 0xff, (target >> 24) & 0xff];
+    update(device, [OUTPUT_OPERATION.set, ...mask], COMMAND.outputTarget);
+    return { outputTarget: target, outputTargets };
+  });
+}
+
+module.exports = { getState, setEnabled, setBrightness, setMode, setColor, setColors, setOutputTarget };

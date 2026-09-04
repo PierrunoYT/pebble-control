@@ -94,7 +94,45 @@ Sources: live probing of a Pebble X Plus (firmware release 4720) and the decompi
 
 **Direction** (type 4): two bytes `<direction> <bouncing>`. Directions are `1` left to right, `2` right to left, `3` top to bottom, `4` bottom to top; bouncing is `0` looping or `1` bouncing. The capability mask has bit 0 for left/right support, bit 1 for up/down, bit 2 for bouncing, so Wave offers all six combinations, Chasers left/right with bouncing, and Peak Meter up/down only. With bouncing enabled the firmware ignores the direction byte and reports the mode's default direction.
 
+**Other commands the speaker answers.** Creative App enables four device features for this product: the `6a` transport, `LEDControlV2`, `MultiplexOutput`, and a hidden firmware update on a second HID collection (usage page `FF99`, report ID `3d`). Probing every other command in Creative's set confirmed that only these reply:
+
+| Command | Name | Payload | Notes |
+|---------|------|---------|-------|
+| `03` | MaxPayloadSize | - | Reply `3f 00`: 63 bytes |
+| `09` | DeviceInformationV2 | - | 17-byte reply, bytes 4 to 6 read `02 1e 04` |
+| `2c` | SpeakerOutputTargetSelectionControl | `00 <mask u32>` set, `01` get, `02` support | Mask `2` PowerAmplifierOut (speakers), `4` Headphone. Support reply lists both. Switching to `4` routes audio to the headphone jack; unsupported masks are rejected with `81`. |
+| `3a` | LEDControl | see above | |
+
+Audio level, mute, EQ, speaker configuration, subwoofer, sound mode, and feature control get no reply. Creative App's Acoustic Engine, 10-band equalizer, and sound modes for this speaker are host-side processing in the Creative USB audio driver, not speaker commands.
+
 **Beat reaction** (type 9, not on this speaker): `<version> <mode> <idle brightness> <beat brightness> <cooldown ms u16>`.
+
+The window uses `contextIsolation`, disables renderer Node.js integration, and runs the renderer in a sandbox.
+
+### Preload Bridge
+
+`src/preload.js` exposes a small API as `window.pebble`. The renderer cannot import Node.js modules or call arbitrary IPC channels.
+
+| Method | Result | Purpose |
+| --- | --- | --- |
+| `getAudioState()` | `{ volume, muted }` | Read the current system audio state |
+| `setVolume(volume)` | `number` | Set and return a clamped integer from 0 to 100 |
+| `setMuted(muted)` | `boolean` | Set the system mute state |
+| `getLaunchAtLogin()` | `boolean` | Read the startup preference |
+| `setLaunchAtLogin(enabled)` | `boolean` | Update and return the startup preference |
+| `getLightingState()` | lighting state object | Read Pebble X Plus connection, power, brightness, mode, the active effect's color list, and the current and supported output targets |
+| `setLightingEnabled(enabled)` | `boolean` | Enable or disable the RGB LEDs |
+| `setLightingBrightness(value)` | `number` | Set hardware brightness from 0 to 255 |
+| `setLightingMode(mode)` | `{ mode, colors, color }` | Select a validated, device-supported effect and return its color list |
+| `setLightingColor(color)` | `{ color, colors, mode }` | Switch to Static and fill every gradient stop with one `#RRGGBB` color |
+| `setLightingColors(colors)` | `{ colors, mode }` | Replace the active effect's color list; the length must match what the effect holds |
+| `setOutputTarget(target)` | `{ outputTarget, outputTargets }` | Route audio to the speakers (`2`) or the headphone jack (`4`) |
+
+### Renderer
+
+`src/renderer.js` maintains the displayed volume and mute state. It polls the operating system every 2.5 seconds so external volume changes are reflected in the interface. Slider writes are briefly debounced to avoid launching excessive system volume operations.
+
+The renderer uses `navigator.mediaDevices.enumerateDevices()` only to display an output label. Audio control does not depend on device enumeration.
 
 ## Commands
 
