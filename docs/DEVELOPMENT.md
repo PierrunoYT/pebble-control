@@ -176,14 +176,14 @@ Before a release:
 
 1. Run `npm run check` and `npm test`. The tests in `test/` run the lighting module against a scripted fake speaker (`test/fake-hid.js`) and cover report framing, colour decoding, rejection handling, capability parsing, slots, and the output target, plus the microphone device selection and format labels, so protocol changes can be checked without hardware.
 2. Run `npm start` and test volume, mute, every preset, and launch at startup.
-3. With a Pebble X Plus on USB: switch slots and effects, edit colours, speed, and direction, toggle lighting power, switch between Speakers and Headphones, and change the microphone level and mute.
+3. With a Pebble X Plus on USB: switch slots and effects, edit colours, speed, and direction, toggle lighting power, switch between Speakers and Headphones, and change the microphone level and mute. Confirm the Device panel shows firmware 1.27 or newer, the Creative driver version, and that each support link opens in the browser.
 4. Unplug and reconnect the USB cable; the lighting and microphone panels should disable and re-enable within a second or two.
 5. Close the window and confirm the tray icon remains, its menu reflects mute and lighting state, and Quit exits.
 6. Press Ctrl+Alt+Up, Ctrl+Alt+Down, and Ctrl+Alt+M with the window hidden and confirm the volume display has caught up when it is shown again.
 7. Change volume outside the app and confirm that the UI refreshes.
 8. Switch the Windows default output to a non-Pebble device and confirm the amber warning, then switch back.
 9. Run `npm run dist`.
-10. Launch `dist/win-unpacked/Pebble Control.exe` and repeat the audio, RGB, and microphone checks; the microphone bridge must start from the packaged app.
+10. Launch `dist/win-unpacked/Pebble Control.exe` and repeat the audio, RGB, microphone, and Device panel checks; the microphone bridge and the driver lookup both run PowerShell from the packaged app.
 11. Install with the generated setup executable and verify the Start menu and uninstall entries.
 
 ## Release Process
