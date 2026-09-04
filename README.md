@@ -11,7 +11,7 @@ A lightweight Windows desktop companion for Creative Pebble speakers. Pebble Con
 - Active Windows audio output label with a warning when it is not a Pebble
 - Global keyboard shortcuts for volume and mute
 - Tray icon with mute, lighting power, and quit; closing the window keeps the app running
-- Optional launch at login
+- Optional launch at login and start hidden in the tray
 - Responsive desktop interface
 
 With a Creative Pebble X Plus connected by USB:

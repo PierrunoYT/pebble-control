@@ -96,6 +96,8 @@ If another app already owns one of these combinations, that shortcut stays with 
 
 Pebble Control keeps a green pebble icon in the notification area. Closing the window hides it there instead of quitting. Click the icon to bring the window back, or right-click it for a menu with Mute or Unmute, Lighting on or off, and Quit. Quit is the only way to exit the app.
 
+Enable **Start in tray** in the bottom bar to open hidden on every launch, so the app is ready in the notification area without a window appearing. Combine it with **Launch at startup** for a silent start when you sign in.
+
 ### Launch at Startup
 
 Enable **Launch at startup** to open Pebble Control when you sign in to Windows. Disable it at any time from the same switch.

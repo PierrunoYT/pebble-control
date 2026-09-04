@@ -48,8 +48,8 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
 - [ ] **Profiles**
   Save and recall a named combination of lighting slot and settings, output target, effects, and equalizer.
 
-- [ ] **Start in tray**
-  Option to launch hidden in the notification area.
+- [x] **Start in tray**
+  Option to launch hidden in the notification area, stored in the app settings file.
 
 - [ ] **Configurable shortcuts**
   Let the user choose the three global key combinations, with a clear warning when one is held by another app.

@@ -308,6 +308,17 @@ presets.forEach((preset) => {
   });
 });
 
+const trayToggle = document.querySelector('#trayToggle');
+trayToggle.addEventListener('change', async () => {
+  try {
+    const saved = await window.pebble.setSettings({ startInTray: trayToggle.checked });
+    trayToggle.checked = saved.startInTray;
+  } catch (error) {
+    trayToggle.checked = !trayToggle.checked;
+    showStatus('Could not change the tray setting', true);
+  }
+});
+
 launchToggle.addEventListener('change', async () => {
   try {
     launchToggle.checked = await window.pebble.setLaunchAtLogin(launchToggle.checked);
@@ -976,7 +987,8 @@ async function initialize() {
     syncAudio(),
     syncLighting(),
     findDefaultOutput(),
-    window.pebble.getLaunchAtLogin().then((enabled) => { launchToggle.checked = enabled; })
+    window.pebble.getLaunchAtLogin().then((enabled) => { launchToggle.checked = enabled; }),
+    window.pebble.getSettings().then((saved) => { trayToggle.checked = saved.startInTray; })
   ]);
   window.setInterval(syncAudio, 2500);
   window.setInterval(syncLighting, 5000);
