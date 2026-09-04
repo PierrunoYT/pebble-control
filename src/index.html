@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'">
+    <title>Pebble Control</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+
+    <main class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#control" aria-label="Pebble Control home">
+          <span class="brand-mark"><span></span></span>
+          <span>
+            <strong>PEBBLE</strong>
+            <small>CONTROL</small>
+          </span>
+        </a>
+        <div class="device-status" id="deviceStatus">
+          <span class="status-dot"></span>
+          <span id="deviceName">Windows default output</span>
+        </div>
+      </header>
+
+      <section class="hero" id="control">
+        <div class="hero-copy">
+          <p class="eyebrow">DESKTOP AUDIO, REFINED</p>
+          <h1>Your sound.<br><em>In perfect balance.</em></h1>
+          <p class="intro">A focused control surface for the Creative Pebble on your desk. One dial, instant presets, no clutter.</p>
+        </div>
+
+        <div class="speaker-stage" aria-hidden="true">
+          <div class="sound-ring ring-one"></div>
+          <div class="sound-ring ring-two"></div>
+          <div class="speaker left-speaker">
+            <div class="speaker-cone"><div class="speaker-cap"></div></div>
+            <div class="speaker-foot"></div>
+          </div>
+          <div class="speaker right-speaker">
+            <div class="speaker-cone"><div class="speaker-cap"></div></div>
+            <div class="speaker-led"></div>
+            <div class="speaker-foot"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="control-grid">
+        <article class="volume-card panel">
+          <div class="panel-heading">
+            <div>
+              <p class="label">MASTER OUTPUT</p>
+              <h2>Volume</h2>
+            </div>
+            <button class="icon-button" id="muteButton" type="button" aria-label="Mute audio" aria-pressed="false">
+              <span class="icon volume-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298zM16 9a5 5 0 0 1 0 6m3.364 3.364a9 9 0 0 0 0-12.728"/></svg>
+              </span>
+              <span class="icon muted-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4.702a.7.7 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.7.7 0 0 0 11 19.298zm5.5 9.798l5-5m-5 0l5 5"/></svg>
+              </span>
+            </button>
+          </div>
+
+          <div class="volume-readout"><span id="volumeValue">--</span><small>%</small></div>
+          <div class="slider-wrap">
+            <input id="volumeSlider" type="range" min="0" max="100" value="50" aria-label="Master volume">
+            <div class="slider-marks"><span>0</span><span>50</span><span>100</span></div>
+          </div>
+        </article>
+
+        <article class="presets-card panel">
+          <div class="panel-heading">
+            <div>
+              <p class="label">QUICK SCENES</p>
+              <h2>Listening presets</h2>
+            </div>
+          </div>
+          <div class="presets" role="group" aria-label="Volume presets">
+            <button class="preset" type="button" data-volume="18">
+              <span class="preset-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg></span>
+              <span><strong>Late night</strong><small>18% output</small></span>
+            </button>
+            <button class="preset" type="button" data-volume="48">
+              <span class="preset-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="18" r="3"/><path d="M11 18V3l8 3"/></svg></span>
+              <span><strong>Everyday</strong><small>48% output</small></span>
+            </button>
+            <button class="preset" type="button" data-volume="72">
+              <span class="preset-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 11h4M8 9v4m7-1h.01M18 10h.01m-.68-5H6.68a4 4 0 0 0-3.98 3.59C2.61 9.31 2 14.43 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.41-1.41A2 2 0 0 1 9.83 16h4.34a2 2 0 0 1 1.42.59L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.57-.61-6.69-.7-7.41A4 4 0 0 0 17.32 5"/></svg></span>
+              <span><strong>Immersive</strong><small>72% output</small></span>
+            </button>
+          </div>
+        </article>
+      </section>
+
+      <section class="utility-bar panel">
+        <div class="output-detail">
+          <span class="utility-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span>
+          <span><small>ACTIVE OUTPUT</small><strong id="outputDetail">Windows default output</strong></span>
+        </div>
+        <label class="launch-setting">
+          <span><strong>Launch at startup</strong><small>Keep controls close</small></span>
+          <input id="launchToggle" type="checkbox">
+          <span class="toggle" aria-hidden="true"></span>
+        </label>
+      </section>
+
+      <footer>
+        <span>Designed for Creative Pebble</span>
+        <span id="syncStatus" role="status">Connecting to Windows audio...</span>
+      </footer>
+    </main>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>

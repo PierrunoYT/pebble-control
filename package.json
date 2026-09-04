@@ -1,0 +1,35 @@
+{
+  "name": "pebble-control",
+  "version": "1.0.0",
+  "description": "A focused Windows audio companion for Creative Pebble speakers.",
+  "main": "src/main.js",
+  "author": "Pebble Control",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "check": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js",
+    "dist": "electron-builder --win nsis"
+  },
+  "dependencies": {
+    "loudness": "^0.4.2"
+  },
+  "devDependencies": {
+    "electron": "^37.2.6",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.pebblecontrol.app",
+    "productName": "Pebble Control",
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
