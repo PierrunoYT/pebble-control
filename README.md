@@ -36,10 +36,11 @@ npm install
 npm start
 ```
 
-Validate the JavaScript sources:
+Validate the JavaScript sources and run the tests:
 
 ```powershell
 npm run check
+npm test
 ```
 
 Build a Windows installer:

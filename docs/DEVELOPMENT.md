@@ -158,7 +158,7 @@ The renderer uses `navigator.mediaDevices.enumerateDevices()` only to display an
 
 Before a release:
 
-1. Run `npm run check`.
+1. Run `npm run check` and `npm test`. The tests in `test/` run the lighting module against a scripted fake speaker (`test/fake-hid.js`) and cover report framing, colour decoding, rejection handling, capability parsing, slots, and the output target, so protocol changes can be checked without hardware.
 2. Run `npm start` and test volume, mute, every preset, RGB controls, and launch at startup.
 3. Change volume outside the app and confirm that the UI refreshes.
 4. Switch the Windows default output and confirm that controls target the new endpoint.

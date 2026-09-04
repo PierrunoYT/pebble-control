@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Tray icon with mute, lighting power, and quit; closing the window hides it to the tray.
 - Global shortcuts: Ctrl+Alt+Up and Ctrl+Alt+Down for volume, Ctrl+Alt+M for mute.
 - Amber warning when the Windows default output is not a Creative Pebble.
+- Unit tests for the lighting module against a scripted fake speaker (`npm test`).
 - Speaker or headphone output switch for the Pebble X Plus over USB.
 - Device-scoped HID transport with response validation and a restricted Electron IPC bridge.
 

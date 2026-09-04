@@ -41,5 +41,5 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
 - [x] **Output device check**
   Warn when the active Windows output is not a Creative Pebble device.
 
-- [ ] **Tests for the lighting module**
+- [x] **Tests for the lighting module**
   Add unit tests for report encoding, response parsing, colour word conversion, and rejection handling using a fake HID device, so protocol changes can be verified without hardware.
