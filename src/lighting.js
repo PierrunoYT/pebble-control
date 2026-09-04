@@ -25,6 +25,7 @@ const OPERATION = Object.freeze({
   getMode: 0x2a,
   setCustomization: 0x2b,
   getCustomization: 0x2c,
+  setActiveIndex: 0x2d,
   getActiveIndex: 0x2e
 });
 
@@ -278,41 +279,79 @@ async function getState() {
     return { connected: false, deviceName: 'Creative Pebble X Plus' };
   }
 
-  return withDevice((device) => {
-    const supportedModes = query(device, [OPERATION.getSupportedModes]).slice(3)
-      .filter((mode) => Object.hasOwn(MODES, mode));
-    const enabled = query(device, [OPERATION.getEnabled])[1] === 1;
-    const brightness = query(device, [OPERATION.getBrightness])[1];
-    const activeIndex = query(device, [OPERATION.getActiveIndex])[1];
-    const mode = query(device, [OPERATION.getMode, activeIndex])[2];
-    const colors = readColors(device, activeIndex);
-    const colors2 = readColors(device, activeIndex, CUSTOMIZATION.color2);
-    const speed = readSpeed(device, activeIndex);
-    const direction = readDirection(device, activeIndex);
-    const directionSupport = direction ? readDirectionSupport(device, mode) : null;
-    const capabilities = readCapabilities(device, supportedModes);
-    const output = readOutputTargets(device);
+  return withDevice(readState);
+}
 
-    return {
-      ...output,
-      outputTargetNames: OUTPUT_TARGETS,
-      connected: true,
-      deviceName: 'Creative Pebble X Plus',
-      enabled,
-      brightness,
-      activeIndex,
-      mode,
-      color: colors[0] || '#ffffff',
-      colors,
-      colors2,
-      speed,
-      speeds: SPEED_PRESETS,
-      direction,
-      directionSupport,
-      supportedModes,
-      modes: MODES,
-      capabilities
-    };
+// The speaker stores five lighting slots. Each holds its own effect and
+// customizations; the active one is what the LEDs show. Slot 0 acknowledges
+// an activation request but never becomes active, so only 1 to 4 are offered.
+const SLOT_COUNT = 5;
+const FIRST_SELECTABLE_SLOT = 1;
+
+function readSlots(device) {
+  const slots = [];
+  for (let index = FIRST_SELECTABLE_SLOT; index < SLOT_COUNT; index += 1) {
+    try {
+      slots.push({ index, mode: query(device, [OPERATION.getMode, index])[2] });
+    } catch (error) {
+      break;
+    }
+  }
+  return slots;
+}
+
+function readState(device) {
+  const supportedModes = query(device, [OPERATION.getSupportedModes]).slice(3)
+    .filter((mode) => Object.hasOwn(MODES, mode));
+  const enabled = query(device, [OPERATION.getEnabled])[1] === 1;
+  const brightness = query(device, [OPERATION.getBrightness])[1];
+  const activeIndex = query(device, [OPERATION.getActiveIndex])[1];
+  const mode = query(device, [OPERATION.getMode, activeIndex])[2];
+  const colors = readColors(device, activeIndex);
+  const colors2 = readColors(device, activeIndex, CUSTOMIZATION.color2);
+  const speed = readSpeed(device, activeIndex);
+  const direction = readDirection(device, activeIndex);
+  const directionSupport = direction ? readDirectionSupport(device, mode) : null;
+  const capabilities = readCapabilities(device, supportedModes);
+  const slots = readSlots(device);
+  const output = readOutputTargets(device);
+
+  return {
+    ...output,
+    outputTargetNames: OUTPUT_TARGETS,
+    connected: true,
+    deviceName: 'Creative Pebble X Plus',
+    enabled,
+    brightness,
+    activeIndex,
+    slots,
+    mode,
+    color: colors[0] || '#ffffff',
+    colors,
+    colors2,
+    speed,
+    speeds: SPEED_PRESETS,
+    direction,
+    directionSupport,
+    supportedModes,
+    modes: MODES,
+    capabilities
+  };
+}
+
+// Makes another slot live and returns the full state, since everything the
+// panel shows belongs to the active slot.
+function setActiveSlot(requestedIndex) {
+  const index = Number(requestedIndex);
+  if (!Number.isInteger(index) || index < FIRST_SELECTABLE_SLOT || index >= SLOT_COUNT) {
+    throw new RangeError(`Slot must be an integer from ${FIRST_SELECTABLE_SLOT} to ${SLOT_COUNT - 1}`);
+  }
+  return withDevice((device) => {
+    update(device, [OPERATION.setActiveIndex, index]);
+    if (query(device, [OPERATION.getActiveIndex])[1] !== index) {
+      throw new Error('The speaker did not switch to that slot');
+    }
+    return readState(device);
   });
 }
 
@@ -466,5 +505,15 @@ function setOutputTarget(requestedTarget) {
 }
 
 module.exports = {
-  getState, setEnabled, setBrightness, setMode, setColor, setColors, setColors2, setSpeed, setDirection, setOutputTarget
+  getState,
+  setEnabled,
+  setBrightness,
+  setMode,
+  setColor,
+  setColors,
+  setColors2,
+  setSpeed,
+  setDirection,
+  setActiveSlot,
+  setOutputTarget
 };

@@ -18,6 +18,7 @@ const lightingDirection = document.querySelector('#lightingDirection');
 const lightingDirectionField = document.querySelector('#lightingDirectionField');
 
 const DIRECTION_LABELS = { 1: 'Left to right', 2: 'Right to left', 3: 'Top to bottom', 4: 'Bottom to top' };
+const lightingSlots = document.querySelector('#lightingSlots');
 const lightingColors = document.querySelector('#lightingColors');
 const lightingColors2 = document.querySelector('#lightingColors2');
 const lightingColorsTitle = document.querySelector('#lightingColorsTitle');
@@ -57,6 +58,7 @@ function renderLighting(nextState) {
   lightingControls.disabled = !connected;
   lightingToggle.disabled = !connected;
   lightingToggle.checked = connected && lightingState.enabled;
+  renderSlots(connected);
   renderModeOptions();
   lightingMode.value = String(lightingState.mode);
   const hasSpeed = Number.isInteger(lightingState.speed);
@@ -73,6 +75,31 @@ function renderLighting(nextState) {
   lightingBrightness.value = lightingState.brightness;
   lightingBrightness.style.setProperty('--volume', `${(lightingState.brightness / 255) * 100}%`);
   lightingBrightnessValue.textContent = lightingState.brightness;
+}
+
+// One button per lighting slot, showing the effect stored in it.
+function renderSlots(connected) {
+  const slots = Array.isArray(lightingState.slots) ? lightingState.slots : [];
+  lightingSlots.hidden = !connected || slots.length < 2;
+  const names = lightingState.modes || {};
+  const buttons = [...lightingSlots.querySelectorAll('button')];
+  if (buttons.length !== slots.length) {
+    lightingSlots.replaceChildren(...slots.map((slot) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.index = String(slot.index);
+      button.append(document.createElement('small'), document.createElement('strong'));
+      return button;
+    }));
+  }
+  [...lightingSlots.querySelectorAll('button')].forEach((button, position) => {
+    const slot = slots[position];
+    const active = slot.index === lightingState.activeIndex;
+    const mode = active ? lightingState.mode : slot.mode;
+    button.querySelector('small').textContent = `Slot ${slot.index}`;
+    button.querySelector('strong').textContent = names[mode] || `Effect ${mode}`;
+    button.setAttribute('aria-pressed', String(active));
+  });
 }
 
 // Builds the effect list from the modes the speaker reports, in the order the
@@ -301,6 +328,19 @@ lightingSpeed.addEventListener('change', async () => {
   } catch (error) {
     renderLighting({ speed: previousSpeed });
     lightingStatus.textContent = 'Could not change effect speed';
+  }
+});
+
+lightingSlots.addEventListener('click', async (event) => {
+  const button = event.target.closest('button');
+  if (!button) return;
+  const index = Number(button.dataset.index);
+  if (index === lightingState.activeIndex) return;
+  try {
+    renderLighting(await window.pebble.setLightingSlot(index));
+    lightingStatus.textContent = `Slot ${index} active`;
+  } catch (error) {
+    lightingStatus.textContent = 'Could not switch lighting slot';
   }
 });
 

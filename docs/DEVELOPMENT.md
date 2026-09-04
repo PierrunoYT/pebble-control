@@ -52,7 +52,7 @@ Sources: live probing of a Pebble X Plus (firmware release 4720) and the decompi
 
 **Transport.** HID interface with usage page `FF01`, report ID `03`. Every report is `03 6a <command> <len lo> <len hi> <payload>`. Command `3a` (58) is `LEDControl`; command `02` is `Acknowledge` with payload `3a <status> <operation>`, status `00` for success and `83` for rejected. Queries are answered with a `3a` report whose payload starts with the same operation byte. After a mode or active-slot change the speaker also pushes unsolicited mode, colour, speed, and direction reports, so response matching must filter by operation code.
 
-**Slots.** The speaker stores five lighting slots (indices 0 to 4), each holding an effect and its customizations. `getActiveIndex` reports the live slot and `setActiveIndex` switches it. Customization reads and writes are only accepted for the active slot; the same write to another slot is rejected with `83`.
+**Slots.** The speaker stores five lighting slots (indices 0 to 4), each holding an effect and its customizations. `getActiveIndex` reports the live slot and `setActiveIndex` switches it. Activating slot 0 is acknowledged but ignored: the speaker pushes the current slot's state and the active index does not change, so the app offers slots 1 to 4 only. Customization reads and writes are only accepted for the active slot; the same write to another slot is rejected with `83`.
 
 **Operations** (first payload byte):
 
@@ -129,6 +129,7 @@ The window uses `contextIsolation`, disables renderer Node.js integration, and r
 | `setLightingColors2(colors)` | `{ colors2, mode }` | Replace Morph's second color list (customization type 2) |
 | `setLightingSpeed(speed)` | `{ speed, mode }` | Set the active effect's speed to one of the seven firmware presets in milliseconds |
 | `setLightingDirection({ direction, bouncing })` | `{ direction, directionSupport, mode }` | Set the active effect's direction (1 to 4) and bounce flag, validated against the effect's capability record |
+| `setLightingSlot(index)` | full lighting state | Make slot 1 to 4 active and return the state of that slot |
 | `setOutputTarget(target)` | `{ outputTarget, outputTargets }` | Route audio to the speakers (`2`) or the headphone jack (`4`) |
 
 ### Renderer

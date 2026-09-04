@@ -60,6 +60,7 @@ Enable **Launch at startup** to open Pebble Control when you sign in to Windows.
 Connect the Creative Pebble X Plus directly by USB. The Ambient lighting panel becomes available when Pebble Control finds the speaker's lighting interface.
 
 - Use **Lighting** to turn the RGB LEDs on or off.
+- Pick one of the four **slots**. Each slot stores its own effect, colors, speed, and direction, and the speaker shows whichever slot is active. All controls below edit the active slot.
 - Select Chasers, Aurora, Peak Meter, Glowing, Wave, Cycle, Static, or Morph from **Effect**.
 - Choose a **Speed** from Slowest to Fastest for Cycle, Wave, Morph, Aurora, Glowing, and Chasers. The control is dimmed for Static and Peak Meter, which have no speed.
 - Choose a **Direction** for Wave, Chasers, and Peak Meter. The options follow what the effect supports: left or right, top or bottom, and Bounce, which runs back and forth. The control is dimmed for other effects.

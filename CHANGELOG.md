@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Effect direction selector for Wave, Chasers, and Peak Meter, built from each effect's capability record.
 - Second color well for Morph's fade target.
 - Effect list and per-effect controls are built from the speaker's own mode list and capability records.
+- Slot picker for the speaker's four selectable stored lighting setups.
 - Speaker or headphone output switch for the Pebble X Plus over USB.
 - Device-scoped HID transport with response validation and a restricted Electron IPC bridge.
 

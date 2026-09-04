@@ -58,6 +58,7 @@ ipcMain.handle('lighting:set-colors', (_event, colors) => lighting.setColors(col
 ipcMain.handle('lighting:set-colors2', (_event, colors) => lighting.setColors2(colors));
 ipcMain.handle('lighting:set-speed', (_event, speed) => lighting.setSpeed(speed));
 ipcMain.handle('lighting:set-direction', (_event, direction) => lighting.setDirection(direction));
+ipcMain.handle('lighting:set-active-slot', (_event, index) => lighting.setActiveSlot(index));
 ipcMain.handle('device:set-output-target', (_event, target) => lighting.setOutputTarget(target));
 
 app.whenReady().then(() => {

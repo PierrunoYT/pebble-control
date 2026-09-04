@@ -16,7 +16,7 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
 - [x] **Capability-driven controls**
   Query operation `0x22` for each supported mode at connect time and show or hide the colour, speed, and direction controls from the reply instead of hardcoding per effect.
 
-- [ ] **Slot switching**
+- [x] **Slot switching**
   Expose the five lighting slots. Read each slot's effect with operation `0x2a`, switch with `0x2d`, and remember that customization only works on the active slot. Present slots as quick-pick presets alongside the existing volume presets.
 
 - [ ] **Hot-plug handling**

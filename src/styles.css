@@ -108,6 +108,14 @@ input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; transform: 
 .lighting-card { margin-top: 14px; padding: 24px 27px; border-radius: 20px; }
 .lighting-card.disconnected { opacity: .68; }
 .lighting-heading { gap: 24px; }
+.slot-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.slot-row button { display: grid; gap: 2px; min-width: 96px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 11px; background: rgba(255,255,255,.025); color: var(--text); text-align: left; cursor: pointer; transition: .18s ease; }
+.slot-row button small { color: var(--muted); font-size: 8px; letter-spacing: .12em; text-transform: uppercase; }
+.slot-row button strong { font-size: 11px; font-weight: 600; }
+.slot-row button:hover { background: rgba(255,255,255,.05); }
+.slot-row button[aria-pressed="true"] { border-color: rgba(201,245,90,.42); background: var(--acid-soft); }
+.slot-row button[aria-pressed="true"] small { color: var(--acid); }
+.slot-row button:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
 .lighting-power { flex: 0 0 auto; }
 .lighting-power small.error { color: #ef846f; }
 .lighting-controls { display: grid; grid-template-columns: 1.1fr .65fr .65fr .75fr 1fr; align-items: center; gap: 24px; min-width: 0; margin: 22px 0 0; padding: 19px 20px; border: 1px solid var(--line); border-radius: 15px; background: rgba(0,0,0,.12); }
