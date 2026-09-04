@@ -19,5 +19,8 @@ contextBridge.exposeInMainWorld('pebble', {
   setOutputTarget: (target) => ipcRenderer.invoke('device:set-output-target', target),
   onLightingPresence: (callback) => {
     ipcRenderer.on('lighting:presence', (_event, connected) => callback(Boolean(connected)));
+  },
+  onAudioChanged: (callback) => {
+    ipcRenderer.on('audio:changed', () => callback());
   }
 });

@@ -35,7 +35,7 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
 - [x] **Tray icon**
   Minimise to the system tray with volume, mute, and lighting power in the tray menu.
 
-- [ ] **Keyboard shortcuts**
+- [x] **Keyboard shortcuts**
   Global shortcuts for volume up, volume down, and mute.
 
 - [ ] **Output device check**

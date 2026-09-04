@@ -1,5 +1,5 @@
 const path = require('node:path');
-const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, globalShortcut } = require('electron');
 const loudness = require('loudness');
 const lighting = require('./lighting');
 
@@ -116,24 +116,51 @@ ipcMain.handle('lighting:set-direction', (_event, direction) => lighting.setDire
 ipcMain.handle('lighting:set-active-slot', (_event, index) => lighting.setActiveSlot(index));
 ipcMain.handle('device:set-output-target', (_event, target) => lighting.setOutputTarget(target));
 
+function broadcast(channel, payload) {
+  BrowserWindow.getAllWindows().forEach((window) => window.webContents.send(channel, payload));
+}
+
+// Global shortcuts work while the window is hidden in the tray. Each one
+// changes Windows audio and then tells the renderer to refresh its display.
+const SHORTCUTS = Object.freeze({
+  'Control+Alt+Up': async () => {
+    const volume = Math.min(100, (await loudness.getVolume()) + 5);
+    await loudness.setVolume(volume);
+    if (await loudness.getMuted()) await loudness.setMuted(false);
+  },
+  'Control+Alt+Down': async () => {
+    await loudness.setVolume(Math.max(0, (await loudness.getVolume()) - 5));
+  },
+  'Control+Alt+M': async () => {
+    await loudness.setMuted(!(await loudness.getMuted()));
+  }
+});
+
+function registerShortcuts() {
+  Object.entries(SHORTCUTS).forEach(([accelerator, action]) => {
+    const registered = globalShortcut.register(accelerator, () => {
+      action().then(() => broadcast('audio:changed')).catch(() => {});
+    });
+    if (!registered) console.warn(`Shortcut ${accelerator} is in use by another app`);
+  });
+}
+
 // Tells every window when the speaker is plugged in or removed so the lighting
 // panel can refresh at once instead of waiting for its next poll.
 function watchSpeakerPresence() {
-  lighting.watchPresence((connected) => {
-    BrowserWindow.getAllWindows().forEach((window) => {
-      window.webContents.send('lighting:presence', connected);
-    });
-  });
+  lighting.watchPresence((connected) => broadcast('lighting:presence', connected));
 }
 
 app.whenReady().then(() => {
   createWindow();
   createTray();
+  registerShortcuts();
   watchSpeakerPresence();
   app.on('activate', showWindow);
 });
 
 app.on('before-quit', () => { quitting = true; });
+app.on('will-quit', () => globalShortcut.unregisterAll());
 
 app.on('window-all-closed', () => {
   // Windows are hidden rather than closed while the tray is present, so this

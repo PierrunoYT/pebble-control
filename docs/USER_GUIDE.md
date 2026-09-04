@@ -51,6 +51,18 @@ Presets do not apply equalization or change the sound profile.
 
 When a Creative Pebble X Plus is connected by USB, a **Speaker output** switch appears in the bottom bar. Choose **Speakers** to play through the satellites or **Headphones** to route audio to the headphone jack on the right speaker. The switch is hidden for other connections.
 
+### Keyboard Shortcuts
+
+These work system-wide while Pebble Control is running, even when the window is hidden in the tray.
+
+| Shortcut | Action |
+| --- | --- |
+| Ctrl+Alt+Up | Volume up by 5 and unmute |
+| Ctrl+Alt+Down | Volume down by 5 |
+| Ctrl+Alt+M | Toggle mute |
+
+If another app already owns one of these combinations, that shortcut stays with the other app and the rest still work.
+
 ### Tray Icon
 
 Pebble Control keeps a green pebble icon in the notification area. Closing the window hides it there instead of quitting. Click the icon to bring the window back, or right-click it for a menu with Mute or Unmute, Lighting on or off, and Quit. Quit is the only way to exit the app.

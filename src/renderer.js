@@ -466,6 +466,7 @@ async function initialize() {
   ]);
   window.setInterval(syncAudio, 2500);
   window.setInterval(syncLighting, 5000);
+  window.pebble.onAudioChanged(syncAudio);
   window.pebble.onLightingPresence(async (connected) => {
     if (!connected) {
       renderLighting({ connected: false });
