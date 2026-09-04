@@ -62,6 +62,12 @@ Changes apply immediately and are shared with Creative App, which shows the same
 
 The **Equalizer** below the effects has ten bands from 31 Hz to 16 kHz, each from -12 to +12 dB. Pick a preset from the list, drag a band to shape your own curve, or select **Reset to flat**. When Creative App is installed its factory presets appear in the list; otherwise a few generic curves are offered. Like the effects, the equalizer is stored separately for Speakers and Headphones, and turning it on turns Processing on.
 
+### Profiles
+
+The **Profiles** panel saves everything the app controls under a name: the active lighting slot with its effect, colors, speed, direction, brightness, and power; the speaker or headphone output; and the Acoustic Engine effects and equalizer for both outputs. Type a name and select **Save current**; saving with an existing name replaces that profile. Select a profile to apply it, or its × to delete it.
+
+Applying a profile skips any part whose hardware is not present, and the status line says what was skipped. Windows volume is not part of a profile; use the listening presets for that.
+
 ### Microphone
 
 The Pebble X Plus also appears in Windows as a microphone. When it is connected by USB, a **Microphone** panel shows its level, a mute button, the audio quality Windows uses for it, and whether it is the Windows default microphone.

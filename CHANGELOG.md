@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Sound mode picker that applies Creative's bundled effect and equalizer settings in one step, and a bass crossover control.
 - Start in tray option to launch hidden in the notification area.
 - Configurable keyboard shortcuts with per-shortcut status and a reset to defaults.
+- Profiles that save and restore the lighting slot, output, Acoustic Engine, and equalizer together.
 - Speaker or headphone output switch for the Pebble X Plus over USB.
 - Device-scoped HID transport with response validation and a restricted Electron IPC bridge.
 

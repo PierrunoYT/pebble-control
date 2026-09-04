@@ -212,7 +212,20 @@ input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; transform: 
 .output-detail small { color: var(--muted); font-size: 8px; letter-spacing: .12em; }
 .output-detail strong { max-width: 380px; margin-top: 3px; overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .startup-settings { display: flex; gap: 26px; }
-.shortcuts-card { margin-top: 14px; padding: 24px 27px; border-radius: 20px; }
+.shortcuts-card, .profiles-card { margin-top: 14px; padding: 24px 27px; border-radius: 20px; }
+.profile-save { display: flex; gap: 10px; align-items: center; }
+.profile-save input { width: 220px; height: 38px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; outline: none; background: #20211c; color: var(--text); font: inherit; font-size: 11px; }
+.profile-save input:focus-visible { border-color: var(--acid); outline: 2px solid var(--acid-soft); }
+.profile-save-button { width: auto; padding: 9px 14px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.profile-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 18px; }
+.profile-list:empty { display: none; }
+.profile { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; padding: 12px 14px; border: 1px solid var(--line); border-radius: 13px; background: rgba(255,255,255,.025); text-align: left; cursor: pointer; transition: .18s ease; }
+.profile:hover { border-color: rgba(201,245,90,.35); background: rgba(255,255,255,.05); }
+.profile strong { font-size: 12px; }
+.profile small { grid-column: 1; color: var(--muted); font-size: 9px; }
+.profile .profile-delete { grid-row: 1 / span 2; width: 28px; height: 28px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: transparent; color: var(--muted); font: inherit; cursor: pointer; }
+.profile .profile-delete:hover { color: #ef846f; border-color: #ef846f; }
+.profile .profile-delete:focus-visible, .profile:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
 .shortcut-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 18px; }
 .shortcut { display: grid; gap: 8px; padding: 14px 15px; border: 1px solid var(--line); border-radius: 13px; background: rgba(0,0,0,.12); }
 .shortcut strong { font-size: 11px; }
@@ -285,7 +298,9 @@ footer { display: flex; justify-content: space-between; padding: 17px 4px 0; col
   .utility-bar { align-items: flex-start; gap: 18px; flex-direction: column; }
   .launch-setting { width: 100%; justify-content: space-between; }
   .startup-settings { width: 100%; flex-direction: column; gap: 14px; }
-  .shortcuts-card { padding: 22px 20px; }
+  .shortcuts-card, .profiles-card { padding: 22px 20px; }
+  .profile-save { width: 100%; }
+  .profile-save input { flex: 1; width: auto; min-width: 0; }
   .shortcut-list { grid-template-columns: 1fr; }
   .output-target { width: 100%; }
   .segmented { display: flex; }

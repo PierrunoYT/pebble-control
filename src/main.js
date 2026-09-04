@@ -6,6 +6,10 @@ const capture = require('./capture');
 const deviceInfo = require('./device-info');
 const effects = require('./effects');
 const settings = require('./settings');
+const { createStore } = require('./profiles');
+const { captureSnapshot, applySnapshot } = require('./snapshot');
+
+let profiles = null;
 
 let mainWindow;
 let tray;
@@ -101,6 +105,11 @@ ipcMain.handle('audio:set-muted', async (_event, muted) => {
   await loudness.setMuted(Boolean(muted));
   return Boolean(muted);
 });
+
+ipcMain.handle('profiles:list', () => profiles.list());
+ipcMain.handle('profiles:save', (_event, name) => profiles.save(name));
+ipcMain.handle('profiles:apply', (_event, id) => profiles.apply(String(id)));
+ipcMain.handle('profiles:delete', (_event, id) => profiles.remove(String(id)));
 
 ipcMain.handle('app:get-settings', () => settings.load());
 ipcMain.handle('app:set-settings', (_event, changes) => settings.save(changes || {}));
@@ -222,6 +231,7 @@ function watchSpeakerPresence() {
 
 app.whenReady().then(() => {
   settings.init(app.getPath('userData'));
+  profiles = createStore({ directory: app.getPath('userData'), capture: captureSnapshot, apply: applySnapshot });
   // With "Start in tray" on, the window is created but stays hidden until the
   // tray icon is clicked; the tray must exist first so the app stays reachable.
   createTray();

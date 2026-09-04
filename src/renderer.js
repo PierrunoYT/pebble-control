@@ -308,6 +308,80 @@ presets.forEach((preset) => {
   });
 });
 
+// Profiles card: saved snapshots of every setting, applied with one click.
+const profileForm = document.querySelector('#profileForm');
+const profileName = document.querySelector('#profileName');
+const profileList = document.querySelector('#profileList');
+const profilesHint = document.querySelector('#profilesHint');
+
+function renderProfiles(profiles) {
+  profileList.replaceChildren(...profiles.map((profile) => {
+    const item = document.createElement('div');
+    item.className = 'profile';
+    item.setAttribute('role', 'button');
+    item.tabIndex = 0;
+    item.dataset.id = profile.id;
+    const name = document.createElement('strong');
+    name.textContent = profile.name;
+    const detail = document.createElement('small');
+    detail.textContent = profile.summary || 'Saved setup';
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'profile-delete';
+    remove.textContent = '×';
+    remove.setAttribute('aria-label', `Delete profile ${profile.name}`);
+    remove.addEventListener('click', async (event) => {
+      event.stopPropagation();
+      try {
+        renderProfiles(await window.pebble.deleteProfile(profile.id));
+        showStatus(`Deleted ${profile.name}`);
+      } catch (error) {
+        showStatus('Could not delete the profile', true);
+      }
+    });
+    const activate = async () => {
+      showStatus(`Applying ${profile.name}...`);
+      try {
+        const result = await window.pebble.applyProfile(profile.id);
+        showStatus(result.skipped.length ? `${profile.name} applied, except ${result.skipped.join(', ')}` : `${profile.name} applied`, result.skipped.length > 0);
+        lastColorEdit = 0;
+        lastEffectEdit = 0;
+        lastEqEdit = 0;
+        await Promise.all([syncLighting(), syncEffects(), syncEq()]);
+      } catch (error) {
+        showStatus('Could not apply the profile', true);
+      }
+    };
+    item.addEventListener('click', activate);
+    item.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        activate();
+      }
+    });
+    item.append(name, remove, detail);
+    return item;
+  }));
+  profilesHint.hidden = profiles.length > 0;
+}
+
+profileForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const name = profileName.value.trim();
+  if (!name) {
+    profileName.focus();
+    return;
+  }
+  showStatus('Saving profile...');
+  try {
+    renderProfiles(await window.pebble.saveProfile(name));
+    profileName.value = '';
+    showStatus(`Saved ${name}`);
+  } catch (error) {
+    showStatus('Could not save the profile', true);
+  }
+});
+
 // Keyboard shortcuts card: each entry shows its combination and whether
 // Windows granted it; selecting one records the next key press.
 const shortcutList = document.querySelector('#shortcutList');
@@ -1069,7 +1143,8 @@ async function initialize() {
     findDefaultOutput(),
     window.pebble.getLaunchAtLogin().then((enabled) => { launchToggle.checked = enabled; }),
     window.pebble.getSettings().then((saved) => { trayToggle.checked = saved.startInTray; }),
-    window.pebble.getShortcuts().then(renderShortcuts)
+    window.pebble.getShortcuts().then(renderShortcuts),
+    window.pebble.listProfiles().then(renderProfiles)
   ]);
   window.setInterval(syncAudio, 2500);
   window.setInterval(syncLighting, 5000);

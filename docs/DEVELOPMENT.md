@@ -22,6 +22,8 @@ Pebble Control/
 |   |-- effects.js    Acoustic Engine control through the effects property store
 |   |-- settings.js   Persistent app settings in the user data folder
 |   |-- accelerator.js  Keyboard event to accelerator string, shared with tests
+|   |-- profiles.js   Named profile store in profiles.json
+|   |-- snapshot.js   Captures and applies every setting a profile covers
 |   |-- audio-bridge.ps1  Core Audio COM bridge run as a child process
 |   |-- preload.js    Restricted renderer bridge
 |   |-- index.html    Application markup
@@ -72,6 +74,8 @@ Creative App configures its driver effects through Windows' `IAudioSystemEffects
 The graphic equalizer lives in the same store: enable `9a9d0cb2-4dc9-494c-8210-9848ae1aa629`, 0 (bool), preamp `ddcf8d90-de27-4de4-af57-088b8ad78fdf`, 0 (float dB), and gains `2b88c76d-d07c-4e97-8922-1bac9f6d5935`, 0 to 9 (float dB) for 31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, and 16000 Hz. Creative App's factory presets are JSON files under `%ProgramData%\Creative\CreativeApp\Product\MF0495\Presets\EQ`, each with Speaker and Headphone band lists; `src/effects.js` reads them when present and falls back to built-in curves. The bass crossover frequency is `3f23dbc5-12d1-4d62-89ed-bc458337e0fc` with ID 0 for external speakers and 2 for headphones, in Hz. Creative's sound modes are JSON files under `...\Product\MF0495\SoundMode`, each with Speaker and Headphone sections holding every effect's enable, level, and mode plus an equalizer preset reference by `Id`; `applySoundMode` writes them all and turns the master on, and `getState` reports which mode the live settings match.
 
 `src/main.js` registers the global shortcuts from `settings.shortcuts` (defaults Ctrl+Alt+Up, Ctrl+Alt+Down, and Ctrl+Alt+M) through Electron's `globalShortcut`, re-registers the whole set when the user changes one, and releases them on quit. Each shortcut's registration result is kept and reported to the renderer, so a combination held by another app shows as such instead of failing silently. `src/accelerator.js` converts a keyboard event into an accelerator string; it is loaded as a plain script by the renderer and as a module by the tests.
+
+`src/profiles.js` keeps `profiles.json` next to the settings and is independent of the hardware: it takes a capture function and an apply function, which `src/snapshot.js` provides using the lighting and effects modules. Apply restores the lighting slot first, then the output, then each output's effects and equalizer, and sets the Acoustic Engine master last so a profile saved with processing off ends up off.
 
 `src/settings.js` keeps `settings.json` in Electron's user data folder and accepts only known keys with sane types, so a hand-edited file cannot inject values. With `startInTray` set, the window is created hidden after the tray exists.
 
@@ -153,6 +157,10 @@ The window uses `contextIsolation`, disables renderer Node.js integration, and r
 | `getAudioState()` | `{ volume, muted }` | Read the current system audio state |
 | `setVolume(volume)` | `number` | Set and return a clamped integer from 0 to 100 |
 | `setMuted(muted)` | `boolean` | Set the system mute state |
+| `listProfiles()` | profile summaries | Saved profiles with id, name, saved time, and a one-line summary |
+| `saveProfile(name)` | profile summaries | Capture every controllable setting under a name, replacing a profile of the same name |
+| `applyProfile(id)` | `{ applied, skipped }` | Restore a profile; `skipped` names parts whose hardware was absent |
+| `deleteProfile(id)` | profile summaries | Remove a profile |
 | `getShortcuts()` | status map | Each shortcut's label, accelerator, and whether Windows registered it |
 | `setShortcuts(changes)` | status map | Save new accelerators for any of `volumeUp`, `volumeDown`, `mute` and re-register |
 | `resetShortcuts()` | status map | Restore the default combinations |

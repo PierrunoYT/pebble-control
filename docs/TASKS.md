@@ -45,8 +45,8 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
 - [x] **Sound modes and bass crossover**
   Sound mode picker reading Creative App's SoundMode files and applying effects, equalizer preset, and master together; crossover frequency slider on the Bass effect.
 
-- [ ] **Profiles**
-  Save and recall a named combination of lighting slot and settings, output target, effects, and equalizer.
+- [x] **Profiles**
+  Named snapshots of the lighting slot and settings, output target, effects, and equalizer for both outputs, saved to profiles.json and applied with one click.
 
 - [x] **Start in tray**
   Option to launch hidden in the notification area, stored in the app settings file.
