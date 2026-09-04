@@ -265,6 +265,18 @@
         <p class="device-note">Firmware updates, driver updates, and the factory reset stay with Creative App. Updates go through Creative's own servers and a separate firmware interface, and a failed update or reset cannot be undone from here.</p>
       </section>
 
+      <section class="shortcuts-card panel" id="shortcutsCard">
+        <div class="panel-heading lighting-heading">
+          <div>
+            <p class="label">SYSTEM-WIDE</p>
+            <h2>Keyboard shortcuts</h2>
+          </div>
+          <button class="text-button" id="shortcutsReset" type="button">Reset to defaults</button>
+        </div>
+        <div class="shortcut-list" id="shortcutList"></div>
+        <p class="device-note">Select a shortcut and press the new combination. A combination needs Ctrl, Alt, Shift, or Win plus a key, and one already held by another app cannot be registered until that app releases it.</p>
+      </section>
+
       <section class="utility-bar panel">
         <div class="output-detail">
           <span class="utility-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span>
@@ -297,6 +309,7 @@
       </footer>
     </main>
 
+    <script src="accelerator.js"></script>
     <script src="renderer.js"></script>
   </body>
 </html>

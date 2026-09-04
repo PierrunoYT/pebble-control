@@ -51,8 +51,8 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
 - [x] **Start in tray**
   Option to launch hidden in the notification area, stored in the app settings file.
 
-- [ ] **Configurable shortcuts**
-  Let the user choose the three global key combinations, with a clear warning when one is held by another app.
+- [x] **Configurable shortcuts**
+  Keyboard shortcuts panel with key capture, per-shortcut registration status, and reset to defaults.
 
 ## Not Planned
 

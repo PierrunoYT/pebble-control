@@ -150,28 +150,69 @@ function broadcast(channel, payload) {
 
 // Global shortcuts work while the window is hidden in the tray. Each one
 // changes Windows audio and then tells the renderer to refresh its display.
-const SHORTCUTS = Object.freeze({
-  'Control+Alt+Up': async () => {
-    const volume = Math.min(100, (await loudness.getVolume()) + 5);
-    await loudness.setVolume(volume);
-    if (await loudness.getMuted()) await loudness.setMuted(false);
+// The key combinations come from settings; these are the actions.
+const SHORTCUT_ACTIONS = Object.freeze({
+  volumeUp: {
+    label: 'Volume up',
+    run: async () => {
+      const volume = Math.min(100, (await loudness.getVolume()) + 5);
+      await loudness.setVolume(volume);
+      if (await loudness.getMuted()) await loudness.setMuted(false);
+    }
   },
-  'Control+Alt+Down': async () => {
-    await loudness.setVolume(Math.max(0, (await loudness.getVolume()) - 5));
+  volumeDown: {
+    label: 'Volume down',
+    run: async () => {
+      await loudness.setVolume(Math.max(0, (await loudness.getVolume()) - 5));
+    }
   },
-  'Control+Alt+M': async () => {
-    await loudness.setMuted(!(await loudness.getMuted()));
+  mute: {
+    label: 'Toggle mute',
+    run: async () => {
+      await loudness.setMuted(!(await loudness.getMuted()));
+    }
   }
 });
 
+let shortcutStatus = {};
+
+// Registers every shortcut from settings, releasing any previous set first, and
+// records which ones Windows granted. A combination held by another app fails
+// registration without affecting the rest.
 function registerShortcuts() {
-  Object.entries(SHORTCUTS).forEach(([accelerator, action]) => {
-    const registered = globalShortcut.register(accelerator, () => {
-      action().then(() => broadcast('audio:changed')).catch(() => {});
-    });
-    if (!registered) console.warn(`Shortcut ${accelerator} is in use by another app`);
+  globalShortcut.unregisterAll();
+  const { shortcuts } = settings.load();
+  shortcutStatus = {};
+  Object.entries(SHORTCUT_ACTIONS).forEach(([id, action]) => {
+    const accelerator = shortcuts[id];
+    let registered = false;
+    try {
+      registered = globalShortcut.register(accelerator, () => {
+        action.run().then(() => broadcast('audio:changed')).catch(() => {});
+      });
+    } catch (error) {
+      registered = false;
+    }
+    if (!registered) console.warn(`Shortcut ${accelerator} for ${id} could not be registered`);
+    shortcutStatus[id] = { label: action.label, accelerator, registered };
   });
+  return shortcutStatus;
 }
+
+ipcMain.handle('app:get-shortcuts', () => shortcutStatus);
+ipcMain.handle('app:set-shortcuts', (_event, changes) => {
+  const wanted = {};
+  Object.keys(SHORTCUT_ACTIONS).forEach((id) => {
+    const value = changes && changes[id];
+    if (typeof value === 'string' && /^[A-Za-z0-9+]{1,60}$/.test(value)) wanted[id] = value;
+  });
+  settings.save({ shortcuts: wanted });
+  return registerShortcuts();
+});
+ipcMain.handle('app:reset-shortcuts', () => {
+  settings.save({ shortcuts: { ...settings.DEFAULTS.shortcuts } });
+  return registerShortcuts();
+});
 
 // Tells every window when the speaker is plugged in or removed so the lighting
 // panel can refresh at once instead of waiting for its next poll.

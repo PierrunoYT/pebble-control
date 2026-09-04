@@ -308,6 +308,86 @@ presets.forEach((preset) => {
   });
 });
 
+// Keyboard shortcuts card: each entry shows its combination and whether
+// Windows granted it; selecting one records the next key press.
+const shortcutList = document.querySelector('#shortcutList');
+const shortcutsReset = document.querySelector('#shortcutsReset');
+let shortcutStatus = {};
+let recordingShortcut = null;
+
+function renderShortcuts(status) {
+  shortcutStatus = status || {};
+  const entries = Object.entries(shortcutStatus);
+  if (shortcutList.childElementCount !== entries.length) {
+    shortcutList.replaceChildren(...entries.map(([id]) => {
+      const item = document.createElement('div');
+      item.className = 'shortcut';
+      item.dataset.shortcut = id;
+      const title = document.createElement('strong');
+      const key = document.createElement('button');
+      key.type = 'button';
+      key.className = 'shortcut-key';
+      key.append(document.createElement('kbd'));
+      key.addEventListener('click', () => startRecording(id));
+      const note = document.createElement('small');
+      item.append(title, key, note);
+      return item;
+    }));
+  }
+  entries.forEach(([id, entry]) => {
+    const item = shortcutList.querySelector(`[data-shortcut="${id}"]`);
+    item.querySelector('strong').textContent = entry.label;
+    const key = item.querySelector('.shortcut-key');
+    const recording = recordingShortcut === id;
+    key.classList.toggle('recording', recording);
+    key.querySelector('kbd').textContent = recording ? 'Press keys...' : window.PebbleAccelerator.describeAccelerator(entry.accelerator);
+    key.setAttribute('aria-label', `${entry.label}: ${window.PebbleAccelerator.describeAccelerator(entry.accelerator)}. Select to change.`);
+    const note = item.querySelector('small');
+    note.textContent = entry.registered ? 'Active' : 'Held by another app';
+    note.classList.toggle('error', !entry.registered);
+  });
+}
+
+function startRecording(id) {
+  recordingShortcut = recordingShortcut === id ? null : id;
+  renderShortcuts(shortcutStatus);
+}
+
+window.addEventListener('keydown', async (event) => {
+  if (!recordingShortcut) return;
+  if (event.key === 'Escape') {
+    recordingShortcut = null;
+    renderShortcuts(shortcutStatus);
+    event.preventDefault();
+    return;
+  }
+  const accelerator = window.PebbleAccelerator.acceleratorFromEvent(event);
+  if (!accelerator) {
+    event.preventDefault();
+    return;
+  }
+  event.preventDefault();
+  const id = recordingShortcut;
+  recordingShortcut = null;
+  try {
+    renderShortcuts(await window.pebble.setShortcuts({ [id]: accelerator }));
+    showStatus(shortcutStatus[id]?.registered ? 'Shortcut updated' : 'Shortcut saved but held by another app', !shortcutStatus[id]?.registered);
+  } catch (error) {
+    showStatus('Could not change the shortcut', true);
+    renderShortcuts(shortcutStatus);
+  }
+}, true);
+
+shortcutsReset.addEventListener('click', async () => {
+  recordingShortcut = null;
+  try {
+    renderShortcuts(await window.pebble.resetShortcuts());
+    showStatus('Shortcuts reset');
+  } catch (error) {
+    showStatus('Could not reset shortcuts', true);
+  }
+});
+
 const trayToggle = document.querySelector('#trayToggle');
 trayToggle.addEventListener('change', async () => {
   try {
@@ -988,7 +1068,8 @@ async function initialize() {
     syncLighting(),
     findDefaultOutput(),
     window.pebble.getLaunchAtLogin().then((enabled) => { launchToggle.checked = enabled; }),
-    window.pebble.getSettings().then((saved) => { trayToggle.checked = saved.startInTray; })
+    window.pebble.getSettings().then((saved) => { trayToggle.checked = saved.startInTray; }),
+    window.pebble.getShortcuts().then(renderShortcuts)
   ]);
   window.setInterval(syncAudio, 2500);
   window.setInterval(syncLighting, 5000);

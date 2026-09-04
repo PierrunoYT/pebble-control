@@ -90,7 +90,7 @@ These work system-wide while Pebble Control is running, even when the window is 
 | Ctrl+Alt+Down | Volume down by 5 |
 | Ctrl+Alt+M | Toggle mute |
 
-If another app already owns one of these combinations, that shortcut stays with the other app and the rest still work.
+These are the defaults. The **Keyboard shortcuts** panel near the bottom shows each one with its status: Active, or Held by another app when Windows refused it. To change one, select its key box, press the new combination, and it is saved and registered at once. Press Esc to cancel. A combination needs Ctrl, Alt, Shift, or Win plus a key; the keyboard's own volume and mute keys are also accepted on their own. **Reset to defaults** restores the three combinations above.
 
 ### Tray Icon
 
