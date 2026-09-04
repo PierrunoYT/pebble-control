@@ -110,7 +110,17 @@ input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; transform: 
 .lighting-card { margin-top: 14px; padding: 24px 27px; border-radius: 20px; }
 .lighting-card.disconnected { opacity: .68; }
 .lighting-heading { gap: 24px; }
-.recording-card { margin-top: 14px; padding: 24px 27px; border-radius: 20px; }
+.recording-card, .device-card { margin-top: 14px; padding: 24px 27px; border-radius: 20px; }
+.device-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-top: 22px; padding: 19px 20px; border: 1px solid var(--line); border-radius: 15px; background: rgba(0,0,0,.12); }
+.device-facts { display: grid; gap: 12px; margin: 0; }
+.device-facts div { display: flex; justify-content: space-between; gap: 16px; }
+.device-facts dt { color: var(--muted); font-size: 9px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.device-facts dd { margin: 0; font-size: 11px; font-weight: 600; text-align: right; }
+.device-facts dd small { display: block; margin-top: 2px; color: var(--muted); font-size: 9px; font-weight: 500; }
+.device-links { display: grid; gap: 8px; align-content: start; }
+.device-links > small { color: var(--muted); font-size: 8px; letter-spacing: .12em; }
+.device-links button { display: block; margin: 0; }
+.device-note { margin: 16px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
 .recording-status { text-align: right; }
 .recording-status strong, .recording-status small { display: block; }
 .recording-status strong { font-size: 11px; }
@@ -199,6 +209,7 @@ footer { display: flex; justify-content: space-between; padding: 17px 4px 0; col
   .lighting-controls { grid-template-columns: 1fr 1fr; }
   .recording-controls { grid-template-columns: 1fr 1fr; }
   .mic-level { grid-column: 1 / -1; }
+  .device-grid { grid-template-columns: 1fr; }
   .mic-default { justify-items: start; text-align: left; }
   .brightness-field { grid-column: 1 / -1; }
   .device-status { max-width: 46%; }
@@ -216,7 +227,8 @@ footer { display: flex; justify-content: space-between; padding: 17px 4px 0; col
   .lighting-heading { align-items: flex-start; flex-direction: column; }
   .lighting-power { width: 100%; justify-content: space-between; }
   .lighting-controls { grid-template-columns: 1fr; padding: 17px; }
-  .recording-card { padding: 22px 20px; }
+  .recording-card, .device-card { padding: 22px 20px; }
+  .device-grid { padding: 17px; }
   .recording-controls { grid-template-columns: 1fr; padding: 17px; }
   .recording-status { text-align: left; }
   .color-control { flex-wrap: wrap; }

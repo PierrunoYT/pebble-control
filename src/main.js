@@ -1,8 +1,9 @@
 const path = require('node:path');
-const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, globalShortcut } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, globalShortcut, shell } = require('electron');
 const loudness = require('loudness');
 const lighting = require('./lighting');
 const capture = require('./capture');
+const deviceInfo = require('./device-info');
 
 let mainWindow;
 let tray;
@@ -116,6 +117,13 @@ ipcMain.handle('lighting:set-speed', (_event, speed) => lighting.setSpeed(speed)
 ipcMain.handle('lighting:set-direction', (_event, direction) => lighting.setDirection(direction));
 ipcMain.handle('lighting:set-active-slot', (_event, index) => lighting.setActiveSlot(index));
 ipcMain.handle('device:set-output-target', (_event, target) => lighting.setOutputTarget(target));
+
+ipcMain.handle('device:get-info', () => deviceInfo.getInfo());
+ipcMain.handle('device:open-link', (_event, url) => {
+  // Only the fixed Creative support links may be opened from the renderer.
+  if (!deviceInfo.isAllowedLink(url)) throw new TypeError('Link not allowed');
+  return shell.openExternal(url);
+});
 
 ipcMain.handle('mic:get-state', () => capture.getState());
 ipcMain.handle('mic:set-volume', (_event, volume) => capture.setVolume(volume));

@@ -8,7 +8,7 @@ const DEVICE = Object.freeze({
   reportId: 0x03
 });
 
-const COMMAND = Object.freeze({ acknowledge: 0x02, outputTarget: 0x2c, ledControl: 0x3a });
+const COMMAND = Object.freeze({ acknowledge: 0x02, deviceInformation: 0x09, outputTarget: 0x2c, ledControl: 0x3a });
 
 // SpeakerOutputTargetSelectionControl masks. The Pebble X Plus reports 2 and 4.
 const OUTPUT_TARGETS = Object.freeze({ 2: 'Speakers', 4: 'Headphones' });
@@ -273,6 +273,40 @@ function withDevice(action) {
   return next;
 }
 
+// The USB release number carries the firmware's major and minor version: the
+// Pebble X Plus reports 0x1270, which Creative App shows as 1.27.
+function firmwareFromRelease(release) {
+  const hex = Number(release).toString(16).padStart(4, '0');
+  return `${Number.parseInt(hex[0], 16)}.${hex.slice(1, 3)}`;
+}
+
+// Identity read from the USB descriptor plus the firmware build word from the
+// device-information command (operation 1, index 0). Creative App's longer
+// version string comes from its firmware-update interface, which this app
+// does not touch, so only the build word is exposed here.
+function getIdentity() {
+  const descriptor = findDevice();
+  if (!descriptor) return { connected: false };
+  const identity = {
+    connected: true,
+    model: descriptor.product || 'Creative Pebble X Plus',
+    serial: descriptor.serialNumber || '',
+    vendorId: DEVICE.vendorId,
+    productId: DEVICE.productId,
+    firmware: firmwareFromRelease(descriptor.release),
+    firmwareBuild: null
+  };
+  return withDevice((device) => {
+    try {
+      const payload = query(device, [1, 0], COMMAND.deviceInformation);
+      identity.firmwareBuild = maskFromPayload(payload, 2).toString(16).padStart(8, '0');
+    } catch (error) {
+      // Older firmware may not answer; the USB release is enough.
+    }
+    return identity;
+  });
+}
+
 // Enumerating HID devices takes a few milliseconds and needs no device handle,
 // so presence can be polled often to notice attach and detach quickly.
 function isConnected() {
@@ -525,6 +559,8 @@ function setOutputTarget(requestedTarget) {
 module.exports = {
   isConnected,
   watchPresence,
+  getIdentity,
+  firmwareFromRelease,
   getState,
   setEnabled,
   setBrightness,

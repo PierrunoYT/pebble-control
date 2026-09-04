@@ -57,6 +57,12 @@ The Pebble X Plus also appears in Windows as a microphone. When it is connected 
 - **Audio quality** lists the formats the microphone accepts. The Pebble X Plus reports one, 16 bit at 48000 Hz mono, so the list is fixed on that model.
 - Select **Set as default microphone** to make Windows use it for recording and calls.
 
+### Device
+
+The **Device** panel shows the speaker's model, serial number, firmware version, USB ID, and the version of Creative's audio driver installed in Windows, with links to Creative's support and download pages.
+
+Firmware updates, driver updates, and the factory reset are not offered. They depend on Creative's update servers and a separate firmware interface, and a failed update or reset cannot be undone from Pebble Control. Use Creative App for those.
+
 ### Speaker Output
 
 When a Creative Pebble X Plus is connected by USB, a **Speaker output** switch appears in the bottom bar. Choose **Speakers** to play through the satellites or **Headphones** to route audio to the headphone jack on the right speaker. The switch is hidden for other connections.

@@ -21,6 +21,7 @@ With a Creative Pebble X Plus connected by USB:
 - The speaker's four stored lighting slots
 - Speaker or headphone output switch
 - Microphone level, mute, audio quality, and set as Windows default
+- Device details: firmware, serial, driver version, and Creative support links
 - Instant response to the speaker being plugged in or removed
 
 ## Requirements

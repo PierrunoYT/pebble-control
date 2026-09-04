@@ -590,6 +590,57 @@ micDefaultButton.addEventListener('click', async () => {
   }
 });
 
+// Device card: identity from the USB descriptor, the Creative driver version
+// from Windows, and links to Creative's support pages.
+const deviceCard = document.querySelector('#deviceCard');
+const deviceModel = document.querySelector('#deviceModel');
+const deviceSerial = document.querySelector('#deviceSerial');
+const deviceFirmware = document.querySelector('#deviceFirmware');
+const deviceDriver = document.querySelector('#deviceDriver');
+const deviceUsb = document.querySelector('#deviceUsb');
+const deviceLinks = document.querySelector('#deviceLinks');
+
+function renderDeviceInfo(info) {
+  deviceCard.hidden = !info.connected;
+  if (!info.connected) return;
+  deviceModel.textContent = info.model;
+  deviceSerial.textContent = info.serial ? `Serial ${info.serial}` : '';
+  deviceFirmware.replaceChildren(document.createTextNode(info.firmware));
+  if (info.firmwareBuild) {
+    const build = document.createElement('small');
+    build.textContent = `Build ${info.firmwareBuild}`;
+    deviceFirmware.append(build);
+  }
+  if (info.driver && info.driver.version) {
+    deviceDriver.replaceChildren(document.createTextNode(info.driver.version));
+    const detail = document.createElement('small');
+    detail.textContent = [info.driver.provider, info.driver.date].filter(Boolean).join(', ');
+    deviceDriver.append(detail);
+  } else {
+    deviceDriver.textContent = 'Not found';
+  }
+  deviceUsb.textContent = `${info.vendorId.toString(16).toUpperCase().padStart(4, '0')}:${info.productId.toString(16).toUpperCase().padStart(4, '0')}`;
+  if (!deviceLinks.childElementCount) {
+    deviceLinks.replaceChildren(...info.links.map((link) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'text-button';
+      button.textContent = link.label;
+      button.addEventListener('click', () => window.pebble.openLink(link.url).catch(() => {}));
+      return button;
+    }));
+  }
+}
+
+async function syncDeviceInfo() {
+  try {
+    renderDeviceInfo(await window.pebble.getDeviceInfo());
+  } catch (error) {
+    console.error('Device info failed:', error);
+    renderDeviceInfo({ connected: false });
+  }
+}
+
 async function initialize() {
   await Promise.all([
     syncAudio(),
@@ -601,17 +652,20 @@ async function initialize() {
   window.setInterval(syncLighting, 5000);
   syncMic();
   window.setInterval(syncMic, 5000);
+  syncDeviceInfo();
   window.pebble.onAudioChanged(syncAudio);
   navigator.mediaDevices.addEventListener('devicechange', findDefaultOutput);
   window.pebble.onLightingPresence(async (connected) => {
     if (!connected) {
       renderLighting({ connected: false });
+      renderDeviceInfo({ connected: false });
       lightingStatus.textContent = 'Speaker disconnected';
       return;
     }
     lightingStatus.textContent = 'Speaker connected';
     await syncLighting();
     await syncMic();
+    await syncDeviceInfo();
   });
 }
 

@@ -18,6 +18,7 @@ Pebble Control/
 |   |-- main.js       Electron main process and IPC handlers
 |   |-- lighting.js   Restricted Pebble X Plus HID protocol implementation
 |   |-- capture.js    Microphone control through the PowerShell audio bridge
+|   |-- device-info.js  Device identity, driver version, and support links
 |   |-- audio-bridge.ps1  Core Audio COM bridge run as a child process
 |   |-- preload.js    Restricted renderer bridge
 |   |-- index.html    Application markup
@@ -111,7 +112,7 @@ Sources: live probing of a Pebble X Plus (firmware release 4720) and the decompi
 | Command | Name | Payload | Notes |
 |---------|------|---------|-------|
 | `03` | MaxPayloadSize | - | Reply `3f 00`: 63 bytes |
-| `09` | DeviceInformationV2 | - | 17-byte reply, bytes 4 to 6 read `02 1e 04` |
+| `09` | DeviceInformationV2 | `00` general, `01 <index>` firmware | General: 17-byte reply, bytes 4 to 6 read `02 1e 04`. Firmware: `01 <index> <build u32> <mcu> <format>`, build `2dd189c0` with format `04` on this unit. Operations `02` (version string) and `03` (serial string) get no reply. The USB release number `0x1270` is the "1.27" Creative App shows; its longer suffix comes from the Qualcomm HID DFU interface on usage page `FF99`. |
 | `2c` | SpeakerOutputTargetSelectionControl | `00 <mask u32>` set, `01` get, `02` support | Mask `2` PowerAmplifierOut (speakers), `4` Headphone. Support reply lists both. Switching to `4` routes audio to the headphone jack; unsupported masks are rejected with `81`. |
 | `3a` | LEDControl | see above | |
 
@@ -143,6 +144,8 @@ The window uses `contextIsolation`, disables renderer Node.js integration, and r
 | `setLightingDirection({ direction, bouncing })` | `{ direction, directionSupport, mode }` | Set the active effect's direction (1 to 4) and bounce flag, validated against the effect's capability record |
 | `setLightingSlot(index)` | full lighting state | Make slot 1 to 4 active and return the state of that slot |
 | `setOutputTarget(target)` | `{ outputTarget, outputTargets }` | Route audio to the speakers (`2`) or the headphone jack (`4`) |
+| `getDeviceInfo()` | device info object | Model, serial, firmware (from the USB release number), firmware build word, Creative audio driver version, and support links |
+| `openLink(url)` | - | Open one of the fixed Creative support links in the browser; any other URL is refused |
 | `getMicState()` | microphone state object | Read the Pebble capture endpoint's name, level, mute, default status, current format, and accepted formats |
 | `setMicVolume(volume)` | `number` | Set the capture level from 0 to 100 |
 | `setMicMuted(muted)` | `boolean` | Mute or unmute the capture endpoint |

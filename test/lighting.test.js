@@ -141,6 +141,13 @@ test('reads and sets the output target using the 0x2c command', async () => {
   assert.throws(() => lighting.setOutputTarget(1), /Unsupported output target/);
 });
 
+test('formats the USB release number the way Creative App shows firmware', () => {
+  const { lighting } = loadLighting();
+  assert.equal(lighting.firmwareFromRelease(0x1270), '1.27');
+  assert.equal(lighting.firmwareFromRelease(0x0105), '0.10');
+  assert.equal(lighting.firmwareFromRelease(4720), '1.27');
+});
+
 test('times out with a clear error when the speaker never answers', async () => {
   const { lighting, fake } = loadLighting();
   fake.speaker.handle = () => [];

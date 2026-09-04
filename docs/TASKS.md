@@ -33,6 +33,14 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
 - [x] **Microphone panel**
   Level, mute, audio quality, and set-as-default for the Pebble X Plus capture endpoint, matching Creative App's Recording page. Uses a PowerShell Core Audio bridge because `loudness` only covers the default render endpoint.
 
+- [x] **Device panel**
+  Model, serial, firmware version, USB ID, Creative audio driver version, and support links, matching the readable parts of Creative App's device settings.
+
+## Not Planned
+
+- **Firmware and driver updates.** Creative App checks its own servers and installs firmware through a Qualcomm HID DFU interface on usage page `FF99`. Replicating either means depending on Creative's infrastructure and risking a bricked speaker. The Device panel links to Creative's download page instead.
+- **Factory reset.** Creative's command set defines command `0x9b`, but it has not been tested on the Pebble X Plus because a successful test would wipe the user's slots and settings and cannot be undone.
+
 ## App
 
 - [x] **Tray icon**

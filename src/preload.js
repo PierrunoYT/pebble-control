@@ -17,6 +17,8 @@ contextBridge.exposeInMainWorld('pebble', {
   setLightingDirection: (direction) => ipcRenderer.invoke('lighting:set-direction', direction),
   setLightingSlot: (index) => ipcRenderer.invoke('lighting:set-active-slot', index),
   setOutputTarget: (target) => ipcRenderer.invoke('device:set-output-target', target),
+  getDeviceInfo: () => ipcRenderer.invoke('device:get-info'),
+  openLink: (url) => ipcRenderer.invoke('device:open-link', url),
   getMicState: () => ipcRenderer.invoke('mic:get-state'),
   setMicVolume: (volume) => ipcRenderer.invoke('mic:set-volume', volume),
   setMicMuted: (muted) => ipcRenderer.invoke('mic:set-muted', muted),
