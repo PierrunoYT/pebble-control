@@ -67,6 +67,7 @@ function createWindow({ hidden = false } = {}) {
     minWidth: 760,
     minHeight: 620,
     show: !hidden,
+    icon: path.join(__dirname, 'assets', 'icon.png'),
     backgroundColor: '#11120f',
     title: 'Pebble Control',
     autoHideMenuBar: true,

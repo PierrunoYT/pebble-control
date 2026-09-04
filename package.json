@@ -8,7 +8,7 @@
   "scripts": {
     "start": "electron .",
     "check": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js && node --check src/lighting.js",
-    "icon": "node scripts/make-tray-icon.js",
+    "icon": "node scripts/make-icons.js",
     "test": "node --test test/*.test.js",
     "dist": "electron-builder --win nsis"
   },
@@ -28,6 +28,7 @@
       "package.json"
     ],
     "win": {
+      "icon": "build/icon.ico",
       "target": "nsis"
     },
     "nsis": {
