@@ -596,6 +596,8 @@ const effectsStatus = document.querySelector('#effectsStatus');
 const effectsMaster = document.querySelector('#effectsMaster');
 const effectsTabs = document.querySelector('#effectsTabs');
 const effectsGrid = document.querySelector('#effectsGrid');
+const soundModeField = document.querySelector('#soundModeField');
+const soundMode = document.querySelector('#soundMode');
 
 let effectsState = { connected: false, output: 'speakers', master: false, effects: {} };
 let effectsOutput = 'speakers';
@@ -643,6 +645,29 @@ function buildEffectCard(id, effect) {
   level.append(levelText, slider);
 
   card.append(head, level);
+
+  if (effect.crossoverRange) {
+    const crossover = document.createElement('label');
+    crossover.className = 'effect-crossover';
+    const text = document.createElement('span');
+    text.append('Crossover ', Object.assign(document.createElement('strong'), { textContent: '--' }));
+    const hz = document.createElement('input');
+    hz.type = 'range';
+    hz.min = String(effect.crossoverRange.min);
+    hz.max = String(effect.crossoverRange.max);
+    hz.step = String(effect.crossoverRange.step);
+    hz.setAttribute('aria-label', `${effect.label} crossover frequency`);
+    hz.addEventListener('input', () => {
+      const value = Number(hz.value);
+      text.querySelector('strong').textContent = `${value} Hz`;
+      hz.style.setProperty('--volume', `${((value - effect.crossoverRange.min) / (effect.crossoverRange.max - effect.crossoverRange.min)) * 100}%`);
+      lastEffectEdit = Date.now();
+      clearTimeout(effectLevelTimers.get(`${id}.crossover`));
+      effectLevelTimers.set(`${id}.crossover`, setTimeout(() => applyEffect(id, { crossover: value }), 120));
+    });
+    crossover.append(text, hz);
+    card.append(crossover);
+  }
 
   if (Array.isArray(effect.modes)) {
     const modes = document.createElement('div');
@@ -697,7 +722,31 @@ function renderEffects(nextState) {
     card.querySelectorAll('.effect-modes button').forEach((button) => {
       button.setAttribute('aria-pressed', String(button.dataset.mode === effect.mode));
     });
+    const crossover = card.querySelector('.effect-crossover input');
+    if (crossover && effect.crossover !== null && effect.crossover !== undefined) {
+      const range = effect.crossoverRange;
+      crossover.value = String(effect.crossover);
+      crossover.style.setProperty('--volume', `${((effect.crossover - range.min) / (range.max - range.min)) * 100}%`);
+      card.querySelector('.effect-crossover strong').textContent = `${effect.crossover} Hz`;
+    }
   });
+  renderSoundModes();
+}
+
+function renderSoundModes() {
+  const modes = Array.isArray(effectsState.soundModes) ? effectsState.soundModes : [];
+  soundModeField.hidden = modes.length === 0;
+  if (modes.length === 0) return;
+  const wanted = [...modes.map((mode) => mode.id), 'custom'];
+  if ([...soundMode.options].map((option) => option.value).join() !== wanted.join()) {
+    soundMode.replaceChildren(...modes.map((mode) => {
+      const option = document.createElement('option');
+      option.value = mode.id;
+      option.textContent = mode.name;
+      return option;
+    }), Object.assign(document.createElement('option'), { value: 'custom', textContent: 'Custom' }));
+  }
+  soundMode.value = effectsState.soundMode || 'custom';
 }
 
 async function syncEffects() {
@@ -844,6 +893,21 @@ effectsMaster.addEventListener('change', async () => {
   } catch (error) {
     renderEffects({ master: !enabled });
     effectsStatus.textContent = 'Could not change Acoustic Engine';
+  }
+});
+
+soundMode.addEventListener('change', async () => {
+  if (soundMode.value === 'custom') return;
+  lastEffectEdit = Date.now();
+  lastEqEdit = Date.now();
+  try {
+    const result = await window.pebble.applySoundMode(soundMode.value, effectsOutput);
+    renderEffects(result.effects);
+    renderEq(result.eq);
+    effectsStatus.textContent = `${soundMode.selectedOptions[0].textContent} applied`;
+  } catch (error) {
+    effectsStatus.textContent = 'Could not apply the sound mode';
+    await Promise.all([syncEffects(), syncEq()]);
   }
 });
 

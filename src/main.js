@@ -129,6 +129,7 @@ ipcMain.handle('device:open-link', (_event, url) => {
 ipcMain.handle('effects:get-state', (_event, output) => effects.getState(output));
 ipcMain.handle('effects:set', (_event, id, changes, output) => effects.setEffect(id, changes || {}, output));
 ipcMain.handle('effects:set-master', (_event, enabled, output) => effects.setMaster(Boolean(enabled), output));
+ipcMain.handle('effects:apply-sound-mode', (_event, id, output) => effects.applySoundMode(id, output));
 ipcMain.handle('eq:get-state', (_event, output) => effects.getEqState(output));
 ipcMain.handle('eq:set', (_event, changes, output) => effects.setEq(changes || {}, output));
 

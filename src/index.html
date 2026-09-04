@@ -170,9 +170,15 @@
           </label>
         </div>
 
-        <div class="effects-tabs segmented" role="group" aria-label="Acoustic Engine output" id="effectsTabs">
-          <button type="button" data-output="speakers" aria-pressed="true">Speakers</button>
-          <button type="button" data-output="headphones" aria-pressed="false">Headphones</button>
+        <div class="effects-toolbar">
+          <div class="effects-tabs segmented" role="group" aria-label="Acoustic Engine output" id="effectsTabs">
+            <button type="button" data-output="speakers" aria-pressed="true">Speakers</button>
+            <button type="button" data-output="headphones" aria-pressed="false">Headphones</button>
+          </div>
+          <label class="lighting-field sound-mode-field" id="soundModeField" hidden>
+            <span>Sound mode</span>
+            <select id="soundMode" aria-label="Sound mode"></select>
+          </label>
         </div>
 
         <fieldset class="effects-grid" id="effectsGrid" disabled></fieldset>

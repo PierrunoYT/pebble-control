@@ -42,6 +42,18 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
 - [x] **Graphic equalizer**
   Ten-band editor with enable, preamp, Reset to flat, and a preset picker that reads Creative App's factory presets from its product data folder when present.
 
+- [x] **Sound modes and bass crossover**
+  Sound mode picker reading Creative App's SoundMode files and applying effects, equalizer preset, and master together; crossover frequency slider on the Bass effect.
+
+- [ ] **Profiles**
+  Save and recall a named combination of lighting slot and settings, output target, effects, and equalizer.
+
+- [ ] **Start in tray**
+  Option to launch hidden in the notification area.
+
+- [ ] **Configurable shortcuts**
+  Let the user choose the three global key combinations, with a clear warning when one is held by another app.
+
 ## Not Planned
 
 - **Firmware and driver updates.** Creative App checks its own servers and installs firmware through a Qualcomm HID DFU interface on usage page `FF99`. Replicating either means depending on Creative's infrastructure and risking a bricked speaker. The Device panel links to Creative's download page instead.

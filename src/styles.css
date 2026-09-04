@@ -111,7 +111,11 @@ input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; transform: 
 .lighting-card.disconnected { opacity: .68; }
 .lighting-heading { gap: 24px; }
 .recording-card, .device-card, .effects-card { margin-top: 14px; padding: 24px 27px; border-radius: 20px; }
-.effects-tabs { margin-top: 18px; }
+.effects-toolbar { display: flex; align-items: end; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-top: 18px; }
+.sound-mode-field { flex: 0 1 300px; }
+.effect-crossover { display: grid; gap: 7px; color: var(--muted); font-size: 9px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.effect-crossover span { display: flex; justify-content: space-between; }
+.effect-crossover strong { color: var(--text); }
 .effects-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; min-width: 0; margin: 16px 0 0; padding: 0; border: 0; }
 .effects-grid:disabled { opacity: .48; }
 .effect { display: grid; gap: 10px; align-content: start; padding: 16px 15px; border: 1px solid var(--line); border-radius: 15px; background: rgba(0,0,0,.12); transition: .18s ease; }

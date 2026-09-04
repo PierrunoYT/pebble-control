@@ -35,7 +35,9 @@ const EFFECTS = Object.freeze({
     label: 'Bass',
     description: 'Fills in low frequencies for a fuller sound from small speakers.',
     enable: { guid: 'f67cf426-f8cb-4a40-bdac-580802e3e193', pid: 0 },
-    level: { guid: 'dd527e35-21a5-4ca6-ab90-8ad464fb55e3', pid: 0, max: 100 }
+    level: { guid: 'dd527e35-21a5-4ca6-ab90-8ad464fb55e3', pid: 0, max: 100 },
+    // Crossover frequency in Hz; the key has one slot per output path.
+    crossover: { guid: '3f23dbc5-12d1-4d62-89ed-bc458337e0fc', pids: { speakers: 0, headphones: 2 }, min: 40, max: 200, step: 10 }
   },
   smartVolume: {
     label: 'Smart Volume',
@@ -52,12 +54,17 @@ const EFFECTS = Object.freeze({
   }
 });
 
-function keyList() {
+function crossoverKey(effect, output) {
+  return { guid: effect.crossover.guid, pid: effect.crossover.pids[output === 'headphones' ? 'headphones' : 'speakers'] };
+}
+
+function keyList(output = 'speakers') {
   const keys = [{ name: MASTER_KEY.name, guid: MASTER_KEY.guid, pid: MASTER_KEY.pid }];
   Object.entries(EFFECTS).forEach(([id, effect]) => {
     keys.push({ name: `${id}.enable`, guid: effect.enable.guid, pid: effect.enable.pid });
     keys.push({ name: `${id}.level`, guid: effect.level.guid, pid: effect.level.pid });
     if (effect.mode) keys.push({ name: `${id}.mode`, guid: effect.mode.guid, pid: effect.mode.pid });
+    if (effect.crossover) keys.push({ name: `${id}.crossover`, ...crossoverKey(effect, output) });
   });
   return keys;
 }
@@ -92,7 +99,7 @@ function toPercent(value, max) {
 async function getState(output = 'speakers') {
   const device = await pebbleRenderDevice();
   if (!device) return { connected: false };
-  const { values } = await bridgeCall({ op: 'effects-get', id: device.id, context: contextFor(output), keys: keyList() });
+  const { values } = await bridgeCall({ op: 'effects-get', id: device.id, context: contextFor(output), keys: keyList(output) });
   const effects = {};
   Object.entries(EFFECTS).forEach(([id, effect]) => {
     const enabled = parseValue(values[`${id}.enable`]);
@@ -110,15 +117,26 @@ async function getState(output = 'speakers') {
       effects[id].mode = name ? name[0] : 'normal';
       effects[id].modes = Object.keys(effect.mode.values);
     }
+    if (effect.crossover) {
+      const crossover = parseValue(values[`${id}.crossover`]);
+      effects[id].crossover = crossover === null ? null : Math.round(crossover);
+      effects[id].crossoverRange = { min: effect.crossover.min, max: effect.crossover.max, step: effect.crossover.step };
+    }
   });
   const master = parseValue(values.master);
-  return {
+  const state = {
     connected: Object.keys(effects).length > 0,
     output,
     endpoint: device.name,
     master: Boolean(master),
     effects
   };
+  if (state.connected) {
+    const modes = loadSoundModes(output);
+    state.soundModes = modes.map(({ id, name }) => ({ id, name }));
+    state.soundMode = matchSoundMode(state, await readEqValues(device, output), modes, loadPresets(output));
+  }
+  return state;
 }
 
 async function write(device, context, key, type, value) {
@@ -149,6 +167,14 @@ async function setEffect(id, changes, output = 'speakers') {
   if (changes.mode !== undefined) {
     if (!effect.mode || !Object.hasOwn(effect.mode.values, changes.mode)) throw new TypeError('Unsupported mode');
     await write(device, context, effect.mode, 'float', effect.mode.values[changes.mode]);
+  }
+  if (changes.crossover !== undefined) {
+    if (!effect.crossover) throw new TypeError('This effect has no crossover');
+    const hz = Number(changes.crossover);
+    if (!Number.isFinite(hz) || hz < effect.crossover.min || hz > effect.crossover.max) {
+      throw new RangeError(`Crossover must be ${effect.crossover.min} to ${effect.crossover.max} Hz`);
+    }
+    await write(device, context, crossoverKey(effect, output), 'float', Math.round(hz));
   }
   if (changes.enabled !== undefined) {
     const enabled = Boolean(changes.enabled);
@@ -188,6 +214,7 @@ function readCreativePreset(file, output) {
     if (!settings || !Array.isArray(settings.Bands) || settings.Bands.length !== EQ_BANDS.length) return null;
     return {
       id: `creative:${path.basename(file, '.json')}`,
+      creativeId: data.Id || null,
       name: data.DisplayName || data.Name || path.basename(file, '.json'),
       order: Number(data.Order) || 0,
       preamp: Number(settings.PreAmp) || 0,
@@ -233,10 +260,15 @@ function matchPreset(gains, presets) {
   return (flat || matches[0]).id;
 }
 
+async function readEqValues(device, output) {
+  const { values } = await bridgeCall({ op: 'effects-get', id: device.id, context: contextFor(output), keys: eqKeyList() });
+  return values;
+}
+
 async function getEqState(output = 'speakers') {
   const device = await pebbleRenderDevice();
   if (!device) return { connected: false };
-  const { values } = await bridgeCall({ op: 'effects-get', id: device.id, context: contextFor(output), keys: eqKeyList() });
+  const values = await readEqValues(device, output);
   const gains = EQ_BANDS.map((_, index) => parseValue(values[`gain${index}`]));
   if (gains.every((gain) => gain === null)) return { connected: false };
   const presets = loadPresets(output);
@@ -291,12 +323,114 @@ async function setEq(changes, output = 'speakers') {
   return getEqState(output);
 }
 
+// Sound modes: Creative App's bundles of effect and equalizer settings, one
+// file per mode with Speaker and Headphone sections, next to the EQ presets.
+const CREATIVE_SOUND_MODE_DIR = path.join(process.env.ProgramData || 'C:\\ProgramData', 'Creative', 'CreativeApp', 'Product', 'MF0495', 'SoundMode');
+
+let soundModeCache = null;
+
+function readSoundMode(file, output) {
+  try {
+    const data = JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, ''));
+    const wanted = output === 'headphones' ? 'Headphone' : 'Speaker';
+    const s = (data.Settings || []).find((entry) => entry.Type === wanted) || data.Settings?.[0];
+    if (!s) return null;
+    const block = (name) => s[name] || {};
+    return {
+      id: `creative:${path.basename(file, '.json')}`,
+      name: data.DisplayName || data.ShortName || data.Name || path.basename(file, '.json'),
+      order: Number(data.Order) || 0,
+      effects: {
+        surround: { enabled: Boolean(block('Surround').Enable), level: toPercent(Number(block('Surround').Level) || 0, 1) },
+        crystalizer: { enabled: Boolean(block('Crystalizer').Enable), level: toPercent(Number(block('Crystalizer').Level) || 0, 1) },
+        bass: { enabled: Boolean(block('Bass').Enable), level: toPercent(Number(block('Bass').Level) || 0, 100), crossover: Number(block('Bass').XOver) || null },
+        smartVolume: {
+          enabled: Boolean(block('SVM').Enable),
+          level: toPercent(Number(block('SVM').Level) || 0, 1),
+          mode: ['normal', 'loud', 'night'][Number(block('SVM').Mode)] || 'normal'
+        },
+        dialogPlus: { enabled: Boolean(block('DialogPlus').Enable), level: toPercent(Number(block('DialogPlus').Level) || 0, 1) }
+      },
+      eq: { enabled: Boolean(block('GraphicEQ').Enable), presetId: block('GraphicEQ').PresetId || null }
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+function loadSoundModes(output) {
+  if (soundModeCache && soundModeCache.output === output) return soundModeCache.modes;
+  let modes = [];
+  try {
+    modes = fs.readdirSync(CREATIVE_SOUND_MODE_DIR)
+      .filter((file) => file.endsWith('.json'))
+      .map((file) => readSoundMode(path.join(CREATIVE_SOUND_MODE_DIR, file), output))
+      .filter(Boolean)
+      .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
+  } catch (error) {
+    modes = [];
+  }
+  soundModeCache = { output, modes };
+  return modes;
+}
+
+function eqPresetForMode(mode, presets) {
+  return presets.find((preset) => preset.creativeId && preset.creativeId === mode.eq.presetId) || null;
+}
+
+// Reports which sound mode the live settings equal, or "custom".
+function matchSoundMode(effectsState, eqValues, modes, presets) {
+  const eqEnabled = Boolean(parseValue(eqValues.enable));
+  const gains = EQ_BANDS.map((_, index) => parseValue(eqValues[`gain${index}`]) ?? 0);
+  const sameEffect = (live, wanted) => live && live.enabled === wanted.enabled
+    && (!wanted.enabled || live.level === wanted.level)
+    && (wanted.mode === undefined || !wanted.enabled || live.mode === wanted.mode);
+  const match = modes.find((mode) => {
+    if (!Object.entries(mode.effects).every(([id, wanted]) => sameEffect(effectsState.effects[id], wanted))) return false;
+    if (eqEnabled !== mode.eq.enabled) return false;
+    if (!eqEnabled) return true;
+    const preset = eqPresetForMode(mode, presets);
+    return Boolean(preset) && preset.gains.every((gain, index) => Math.abs(gain - gains[index]) < 0.01);
+  });
+  return match ? match.id : 'custom';
+}
+
+// Applies a Creative sound mode: every effect, the equalizer, and the master.
+async function applySoundMode(id, output = 'speakers') {
+  const mode = loadSoundModes(output).find((candidate) => candidate.id === id);
+  if (!mode) throw new TypeError('Unknown sound mode');
+  const device = await pebbleRenderDevice();
+  if (!device) throw new Error('The Pebble speaker output is not present');
+  const context = contextFor(output);
+  for (const [effectId, wanted] of Object.entries(mode.effects)) {
+    const effect = EFFECTS[effectId];
+    await write(device, context, effect.level, 'float', (wanted.level / 100) * effect.level.max);
+    if (effect.mode && wanted.mode) await write(device, context, effect.mode, 'float', effect.mode.values[wanted.mode]);
+    if (effect.crossover && wanted.crossover) await write(device, context, crossoverKey(effect, output), 'float', wanted.crossover);
+    await write(device, context, effect.enable, 'bool', wanted.enabled ? 1 : 0);
+  }
+  const preset = eqPresetForMode(mode, loadPresets(output));
+  if (preset) {
+    for (let index = 0; index < preset.gains.length; index += 1) {
+      await write(device, context, { guid: EQ_KEYS.gainGuid, pid: index }, 'float', clampGain(preset.gains[index]));
+    }
+    await write(device, context, EQ_KEYS.preamp, 'float', clampGain(preset.preamp));
+  }
+  await write(device, context, EQ_KEYS.enable, 'bool', mode.eq.enabled ? 1 : 0);
+  await write(device, context, MASTER_KEY, 'bool', 1);
+  return { effects: await getState(output), eq: await getEqState(output) };
+}
+
 module.exports = {
   getState,
   setEffect,
   setMaster,
   getEqState,
   setEq,
+  applySoundMode,
+  loadSoundModes,
+  readSoundMode,
+  matchSoundMode,
   EFFECTS,
   CONTEXTS,
   MASTER_KEY,

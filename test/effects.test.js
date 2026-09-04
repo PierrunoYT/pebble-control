@@ -28,6 +28,7 @@ test('asks the bridge for the master key and every effect key', () => {
   const keys = keyList();
   assert.equal(keys[0].guid, MASTER_KEY.guid);
   assert.ok(keys.some((k) => k.name === 'smartVolume.mode'));
-  assert.equal(keys.length, 1 + Object.keys(EFFECTS).length * 2 + 1);
+  // master, enable and level per effect, Smart Volume's mode, Bass's crossover
+  assert.equal(keys.length, 1 + Object.keys(EFFECTS).length * 2 + 2);
   keys.forEach((k) => assert.match(k.guid, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/));
 });
