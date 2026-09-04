@@ -1,9 +1,56 @@
 const path = require('node:path');
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage } = require('electron');
 const loudness = require('loudness');
 const lighting = require('./lighting');
 
 let mainWindow;
+let tray;
+let quitting = false;
+
+function showWindow() {
+  if (!mainWindow) {
+    createWindow();
+    return;
+  }
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
+}
+
+// The tray menu reflects live state, so it is rebuilt each time it opens.
+async function buildTrayMenu() {
+  const [muted, lightingState] = await Promise.all([
+    loudness.getMuted().catch(() => null),
+    lighting.getState().catch(() => ({ connected: false }))
+  ]);
+  const template = [
+    { label: 'Show Pebble Control', click: showWindow },
+    { type: 'separator' },
+    {
+      label: muted ? 'Unmute' : 'Mute',
+      enabled: muted !== null,
+      click: () => loudness.setMuted(!muted).catch(() => {})
+    },
+    {
+      label: lightingState.enabled ? 'Lighting off' : 'Lighting on',
+      enabled: Boolean(lightingState.connected),
+      click: () => lighting.setEnabled(!lightingState.enabled).catch(() => {})
+    },
+    { type: 'separator' },
+    { label: 'Quit', click: () => { quitting = true; app.quit(); } }
+  ];
+  return Menu.buildFromTemplate(template);
+}
+
+function createTray() {
+  const icon = nativeImage.createFromPath(path.join(__dirname, 'assets', 'tray.png'));
+  tray = new Tray(icon);
+  tray.setToolTip('Pebble Control');
+  tray.on('click', showWindow);
+  tray.on('right-click', async () => {
+    tray.popUpContextMenu(await buildTrayMenu());
+  });
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -23,6 +70,14 @@ function createWindow() {
   });
 
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
+
+  // Closing the window keeps the app in the tray; Quit in the tray menu exits.
+  mainWindow.on('close', (event) => {
+    if (quitting) return;
+    event.preventDefault();
+    mainWindow.hide();
+  });
+  mainWindow.on('closed', () => { mainWindow = null; });
 }
 
 ipcMain.handle('audio:get-state', async () => ({
@@ -73,12 +128,15 @@ function watchSpeakerPresence() {
 
 app.whenReady().then(() => {
   createWindow();
+  createTray();
   watchSpeakerPresence();
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
+  app.on('activate', showWindow);
 });
 
+app.on('before-quit', () => { quitting = true; });
+
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+  // Windows are hidden rather than closed while the tray is present, so this
+  // only fires on the way out.
+  if (process.platform !== 'darwin' && quitting) app.quit();
 });

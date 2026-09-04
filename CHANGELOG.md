@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Effect list and per-effect controls are built from the speaker's own mode list and capability records.
 - Slot picker for the speaker's four selectable stored lighting setups.
 - The lighting panel reacts to the speaker being plugged in or removed within a second.
+- Tray icon with mute, lighting power, and quit; closing the window hides it to the tray.
 - Speaker or headphone output switch for the Pebble X Plus over USB.
 - Device-scoped HID transport with response validation and a restricted Electron IPC bridge.
 

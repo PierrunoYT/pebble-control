@@ -32,7 +32,7 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
 
 ## App
 
-- [ ] **Tray icon**
+- [x] **Tray icon**
   Minimise to the system tray with volume, mute, and lighting power in the tray menu.
 
 - [ ] **Keyboard shortcuts**
