@@ -19,7 +19,7 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
 - [x] **Slot switching**
   Expose the five lighting slots. Read each slot's effect with operation `0x2a`, switch with `0x2d`, and remember that customization only works on the active slot. Present slots as quick-pick presets alongside the existing volume presets.
 
-- [ ] **Hot-plug handling**
+- [x] **Hot-plug handling**
   React to USB attach and detach events instead of relying on the 5-second poll, so the lighting panel enables and disables immediately.
 
 ## Audio over USB

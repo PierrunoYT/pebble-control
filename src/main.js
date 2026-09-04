@@ -61,8 +61,19 @@ ipcMain.handle('lighting:set-direction', (_event, direction) => lighting.setDire
 ipcMain.handle('lighting:set-active-slot', (_event, index) => lighting.setActiveSlot(index));
 ipcMain.handle('device:set-output-target', (_event, target) => lighting.setOutputTarget(target));
 
+// Tells every window when the speaker is plugged in or removed so the lighting
+// panel can refresh at once instead of waiting for its next poll.
+function watchSpeakerPresence() {
+  lighting.watchPresence((connected) => {
+    BrowserWindow.getAllWindows().forEach((window) => {
+      window.webContents.send('lighting:presence', connected);
+    });
+  });
+}
+
 app.whenReady().then(() => {
   createWindow();
+  watchSpeakerPresence();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });

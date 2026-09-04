@@ -16,5 +16,8 @@ contextBridge.exposeInMainWorld('pebble', {
   setLightingSpeed: (speed) => ipcRenderer.invoke('lighting:set-speed', speed),
   setLightingDirection: (direction) => ipcRenderer.invoke('lighting:set-direction', direction),
   setLightingSlot: (index) => ipcRenderer.invoke('lighting:set-active-slot', index),
-  setOutputTarget: (target) => ipcRenderer.invoke('device:set-output-target', target)
+  setOutputTarget: (target) => ipcRenderer.invoke('device:set-output-target', target),
+  onLightingPresence: (callback) => {
+    ipcRenderer.on('lighting:presence', (_event, connected) => callback(Boolean(connected)));
+  }
 });

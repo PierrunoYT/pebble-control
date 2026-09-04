@@ -57,7 +57,7 @@ Enable **Launch at startup** to open Pebble Control when you sign in to Windows.
 
 ### Pebble X Plus Lighting
 
-Connect the Creative Pebble X Plus directly by USB. The Ambient lighting panel becomes available when Pebble Control finds the speaker's lighting interface.
+Connect the Creative Pebble X Plus directly by USB. The Ambient lighting panel becomes available within about a second of the speaker appearing, and disables itself as soon as the speaker is unplugged.
 
 - Use **Lighting** to turn the RGB LEDs on or off.
 - Pick one of the four **slots**. Each slot stores its own effect, colors, speed, and direction, and the speaker shows whichever slot is active. All controls below edit the active slot.

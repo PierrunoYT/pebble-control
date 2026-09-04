@@ -273,6 +273,24 @@ function withDevice(action) {
   return next;
 }
 
+// Enumerating HID devices takes a few milliseconds and needs no device handle,
+// so presence can be polled often to notice attach and detach quickly.
+function isConnected() {
+  return Boolean(findDevice());
+}
+
+function watchPresence(onChange, intervalMs = 1000) {
+  let present = isConnected();
+  const timer = setInterval(() => {
+    const next = isConnected();
+    if (next !== present) {
+      present = next;
+      onChange(next);
+    }
+  }, intervalMs);
+  return () => clearInterval(timer);
+}
+
 async function getState() {
   if (!findDevice()) {
     capabilityCache = null;
@@ -505,6 +523,8 @@ function setOutputTarget(requestedTarget) {
 }
 
 module.exports = {
+  isConnected,
+  watchPresence,
   getState,
   setEnabled,
   setBrightness,

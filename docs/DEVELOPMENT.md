@@ -131,6 +131,7 @@ The window uses `contextIsolation`, disables renderer Node.js integration, and r
 | `setLightingDirection({ direction, bouncing })` | `{ direction, directionSupport, mode }` | Set the active effect's direction (1 to 4) and bounce flag, validated against the effect's capability record |
 | `setLightingSlot(index)` | full lighting state | Make slot 1 to 4 active and return the state of that slot |
 | `setOutputTarget(target)` | `{ outputTarget, outputTargets }` | Route audio to the speakers (`2`) or the headphone jack (`4`) |
+| `onLightingPresence(callback)` | - | Subscribe to speaker attach and detach events; the main process polls HID presence once a second |
 
 ### Renderer
 
