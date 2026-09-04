@@ -7,7 +7,8 @@ const deviceStatus = document.querySelector('#deviceStatus');
 const deviceName = document.querySelector('#deviceName');
 const outputDetail = document.querySelector('#outputDetail');
 const outputLabel = document.querySelector('#outputLabel');
-const presets = [...document.querySelectorAll('.preset')];
+// Only the listening presets carry a volume; other buttons share the style.
+const presets = [...document.querySelectorAll('.presets .preset[data-volume]')];
 const lightingCard = document.querySelector('#lightingCard');
 const lightingControls = document.querySelector('#lightingControls');
 const lightingToggle = document.querySelector('#lightingToggle');

@@ -96,8 +96,9 @@ ipcMain.handle('audio:get-state', async () => ({
 }));
 
 ipcMain.handle('audio:set-volume', async (_event, requestedVolume) => {
-  const volume = Math.min(100, Math.max(0, Math.round(Number(requestedVolume))));
-  if (!Number.isFinite(volume)) throw new TypeError('Volume must be a number');
+  const requested = Number(requestedVolume);
+  if (!Number.isFinite(requested)) throw new TypeError('Volume must be a number');
+  const volume = Math.min(100, Math.max(0, Math.round(requested)));
   await loudness.setVolume(volume);
   return volume;
 });
