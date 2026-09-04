@@ -23,6 +23,10 @@ const OPERATION = Object.freeze({
   getActiveIndex: 0x2e
 });
 
+// Customization types from Creative's LEDControlV2 feature. The speaker only
+// accepts customization reads and writes for the active slot.
+const CUSTOMIZATION = Object.freeze({ color: 1, color2: 2, speed: 3, direction: 4 });
+
 const MODES = Object.freeze({
   0x01: 'Cycle',
   0x03: 'Static',
@@ -121,7 +125,7 @@ function colorsFromPayload(payload) {
 
 function readColors(device, activeIndex) {
   try {
-    return colorsFromPayload(query(device, [OPERATION.getCustomization, activeIndex, 1, 1, 0xff]));
+    return colorsFromPayload(query(device, [OPERATION.getCustomization, activeIndex, CUSTOMIZATION.color]));
   } catch (error) {
     // Cycle and Aurora carry no color list; the speaker rejects the query.
     return [];
@@ -165,7 +169,6 @@ async function getState() {
   }
 
   return withDevice((device) => {
-    query(device, [OPERATION.getInfo]);
     const supportedModes = query(device, [OPERATION.getSupportedModes]).slice(3)
       .filter((mode) => Object.hasOwn(MODES, mode));
     const enabled = query(device, [OPERATION.getEnabled])[1] === 1;
@@ -229,7 +232,8 @@ function writeColors(device, activeIndex, colors) {
   if (colors.length !== current.length) {
     throw new RangeError(`The active lighting effect needs exactly ${current.length} colors`);
   }
-  update(device, [OPERATION.setCustomization, activeIndex, 1, 1, ...colors.flatMap(colorToBytes)]);
+  // Payload: starting group ID (1), then one little-endian RGBA word per group.
+  update(device, [OPERATION.setCustomization, activeIndex, CUSTOMIZATION.color, 1, ...colors.flatMap(colorToBytes)]);
   return colors.map((color) => color.toLowerCase());
 }
 

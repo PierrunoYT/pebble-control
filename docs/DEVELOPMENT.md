@@ -46,42 +46,55 @@ The application is Windows-focused. The renderer can load on other platforms, bu
 
 `src/lighting.js` matches only USB device `041E:329A` on vendor usage page `FF01`. It serializes access, validates semantic values, correlates responses, and checks device acknowledgements. Raw HID reports and device paths are never accepted over IPC.
 
-### Lighting Protocol Notes
+### Lighting Protocol Reference
 
-Findings from probing a Pebble X Plus (firmware release 4720):
+Sources: live probing of a Pebble X Plus (firmware release 4720) and the decompiled `Creative.Platform.Devices.dll` and `Creative.App.Features.Lighting.dll` from Creative App, where the feature is called `LEDControlV2` and the transport is the "CDC raw" command set.
 
-- Reports are `03 6a <command> <len lo> <len hi> <payload>`. Command `3a` is LED control; command `02` is an acknowledgement whose payload is `3a <status> <operation>`, with status `00` for success and `83` for rejected.
-- The speaker has five lighting slots (indices 0 to 4), each with its own effect and settings. `getActiveIndex` (`2e`) reports the live slot.
-- Customization operations `2b`/`2c` take `<slot> <type> 01 <ff>`. Type 1 is the color list, type 3 is a 16-bit little-endian speed in milliseconds, type 4 is a 16-bit option (likely direction). Effects reject types they do not carry.
-- Colors are 4-byte little-endian ARGB words: `alpha blue green red`.
-- The color count is fixed per effect: Static, Glowing, Wave, and Peak Meter hold exactly five colors that render as a gradient identically on both speakers; Morph and Chasers hold one; Cycle and Aurora hold none. Other counts are rejected.
-- After a mode change the speaker pushes unsolicited mode, color, speed, and option reports; response matching must filter by operation code.
+**Transport.** HID interface with usage page `FF01`, report ID `03`. Every report is `03 6a <command> <len lo> <len hi> <payload>`. Command `3a` (58) is `LEDControl`; command `02` is `Acknowledge` with payload `3a <status> <operation>`, status `00` for success and `83` for rejected. Queries are answered with a `3a` report whose payload starts with the same operation byte. After a mode or active-slot change the speaker also pushes unsolicited mode, colour, speed, and direction reports, so response matching must filter by operation code.
 
-The window uses `contextIsolation`, disables renderer Node.js integration, and runs the renderer in a sandbox.
+**Slots.** The speaker stores five lighting slots (indices 0 to 4), each holding an effect and its customizations. `getActiveIndex` reports the live slot and `setActiveIndex` switches it. Customization reads and writes are only accepted for the active slot; the same write to another slot is rejected with `83`.
 
-### Preload Bridge
+**Operations** (first payload byte):
 
-`src/preload.js` exposes a small API as `window.pebble`. The renderer cannot import Node.js modules or call arbitrary IPC channels.
+| Op | Name | Payload | Notes |
+|----|------|---------|-------|
+| `1f` | LEDControlSupport | - | Reply `01 06 00000000`: version 1, 6 presets, capability 0 |
+| `20` | LEDInfoV2 | - | Reply `05 01 00 0400 00 0a`: max 5 colour groups; one LED region, logical index 0, position mask `0x0004`, start 0, 10 LEDs |
+| `21` | SupportedModes | - | Reply `08 00` then mode list `0b 08 0a 09 04 01 03 07` |
+| `22` | SupportedModeCustomization | `<mode>` | Reply `<mode> <count>` then records `<type> <len> <params>` |
+| `25` / `26` | Enable set / get | `<0|1>` | LED power |
+| `27` / `28` | Brightness set / get | `<0-255>` | |
+| `29` / `2a` | Mode set / get | `<slot> [<mode>]` | Works on any slot |
+| `2b` / `2c` | Customization set / get | `<slot> <type> [<value>]` | Active slot only |
+| `2d` / `2e` | ActiveIndex set / get | `[<slot>]` | |
+| `2f` | ToggleActiveIndex | - | No reply on Pebble X Plus |
+| `30` | CopyProfile | `<src> <dst>` | Defined by Creative App; untested |
+| `31`-`35` | Profile name and UUID | | No reply on Pebble X Plus |
+| `36` | ResetProfile | `<slot>` | No reply on Pebble X Plus |
+| `37` / `38` | GroupCount set / get | `<slot>` | No reply on Pebble X Plus |
 
-| Method | Result | Purpose |
-| --- | --- | --- |
-| `getAudioState()` | `{ volume, muted }` | Read the current system audio state |
-| `setVolume(volume)` | `number` | Set and return a clamped integer from 0 to 100 |
-| `setMuted(muted)` | `boolean` | Set the system mute state |
-| `getLaunchAtLogin()` | `boolean` | Read the startup preference |
-| `setLaunchAtLogin(enabled)` | `boolean` | Update and return the startup preference |
-| `getLightingState()` | lighting state object | Read Pebble X Plus connection, power, brightness, mode, and the active effect's color list |
-| `setLightingEnabled(enabled)` | `boolean` | Enable or disable the RGB LEDs |
-| `setLightingBrightness(value)` | `number` | Set hardware brightness from 0 to 255 |
-| `setLightingMode(mode)` | `{ mode, colors, color }` | Select a validated, device-supported effect and return its color list |
-| `setLightingColor(color)` | `{ color, colors, mode }` | Switch to Static and fill every gradient stop with one `#RRGGBB` color |
-| `setLightingColors(colors)` | `{ colors, mode }` | Replace the active effect's color list; the length must match what the effect holds |
+**Modes.** `01` Cycle, `03` Static, `04` Wave, `07` Morph, `08` Aurora, `09` Glowing, `0a` Peak Meter, `0b` Chasers. Creative's enum also defines `02` Spectrum Analyzer, `05` Pulsate, and `06` Blink, which this speaker does not list.
 
-### Renderer
+**Customization types** (`<type>` byte): `1` Colour, `2` Colour2, `3` Speed, `4` Direction, `5` Gradient, `7` LeftRight, `8` TransientColour, `9` BeatReaction. The Pebble X Plus reports only types 1 to 4.
 
-`src/renderer.js` maintains the displayed volume and mute state. It polls the operating system every 2.5 seconds so external volume changes are reflected in the interface. Slider writes are briefly debounced to avoid launching excessive system volume operations.
+| Mode | Colour | Colour2 | Speed | Direction mask |
+|------|--------|---------|-------|----------------|
+| Cycle | - | - | yes | - |
+| Static | 5 groups | - | - | - |
+| Wave | 5 groups | - | yes | `07` |
+| Morph | 1 | 1 | yes | - |
+| Aurora | - | - | yes | - |
+| Glowing | 5 groups | - | yes | - |
+| Peak Meter | 5 groups | - | - | `02` |
+| Chasers | 1 | - | yes | `05` |
 
-The renderer uses `navigator.mediaDevices.enumerateDevices()` only to display an output label. Audio control does not depend on device enumeration.
+**Colour value** (types 1 and 2): `<starting group id>` followed by one 32-bit little-endian word per group. The word is `R<<24 | G<<16 | B<<8 | A`, so the bytes on the wire are `A B G R`; alpha is always `ff`. The starting group ID is `1` in every reply and the speaker accepts `0` to `2` on writes. The group count is fixed per mode: a write with any other number of colours is rejected. The five groups of Static, Wave, Glowing, and Peak Meter render as one gradient shown identically on both speakers. The capability record for Colour is `08 08 08 08`, the bit depth of each channel.
+
+**Speed** (type 3): 16-bit little-endian milliseconds. The capability record is `02 7017 fa00 0100` (data type 2, max 6000, min 250, step 1), but the firmware only accepts the seven Creative App presets: 6000 Slowest, 4000 Slower, 2500 Slow, 1333 Normal, 750 Fast, 375 Faster, 250 Fastest. Any other value is rejected.
+
+**Direction** (type 4): two bytes `<direction> <bouncing>`. Directions are `1` left to right, `2` right to left, `3` top to bottom, `4` bottom to top; bouncing is `0` looping or `1` bouncing. The capability mask has bit 0 for left/right support, bit 1 for up/down, bit 2 for bouncing, so Wave offers all six combinations, Chasers left/right with bouncing, and Peak Meter up/down only. With bouncing enabled the firmware ignores the direction byte and reports the mode's default direction.
+
+**Beat reaction** (type 9, not on this speaker): `<version> <mode> <idle brightness> <beat brightness> <cooldown ms u16>`.
 
 ## Commands
 
