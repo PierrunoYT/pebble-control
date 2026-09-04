@@ -112,7 +112,18 @@ input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; transform: 
 .lighting-heading { gap: 24px; }
 .recording-card, .device-card, .effects-card { margin-top: 14px; padding: 24px 27px; border-radius: 20px; }
 .effects-toolbar { display: flex; align-items: end; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-top: 18px; }
-.sound-mode-field { flex: 0 1 300px; }
+.sound-mode-tools { display: grid; gap: 8px; flex: 0 1 360px; }
+.sound-mode-field { min-width: 0; }
+.sound-mode-actions { display: flex; gap: 16px; }
+.sound-mode-actions .text-button { margin: 0; }
+.sound-mode-delete { color: #ef846f; }
+.sound-mode-form { display: flex; gap: 10px; align-items: center; }
+.sound-mode-form input { flex: 1; min-width: 0; height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; outline: none; background: #20211c; color: var(--text); font: inherit; font-size: 11px; }
+.sound-mode-form input:focus-visible { border-color: var(--acid); outline: 2px solid var(--acid-soft); }
+.sound-mode-form .text-button { margin: 0; }
+.mic-eq { display: flex; align-items: center; gap: 24px; grid-column: 1 / -1; padding-top: 18px; border-top: 1px solid var(--line); }
+.mic-eq .launch-setting { flex: 0 0 auto; }
+.mic-eq-profile { flex: 0 1 300px; }
 .effect-crossover { display: grid; gap: 7px; color: var(--muted); font-size: 9px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
 .effect-crossover span { display: flex; justify-content: space-between; }
 .effect-crossover strong { color: var(--text); }
@@ -267,6 +278,7 @@ footer { display: flex; justify-content: space-between; padding: 17px 4px 0; col
   .lighting-controls { grid-template-columns: 1fr 1fr; }
   .recording-controls { grid-template-columns: 1fr 1fr; }
   .mic-level { grid-column: 1 / -1; }
+  .mic-eq { flex-wrap: wrap; }
   .effects-grid { grid-template-columns: repeat(2, 1fr); }
   .device-grid { grid-template-columns: 1fr; }
   .mic-default { justify-items: start; text-align: left; }

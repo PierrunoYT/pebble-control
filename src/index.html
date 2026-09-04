@@ -190,10 +190,22 @@
             <button type="button" data-output="speakers" aria-pressed="true">Speakers</button>
             <button type="button" data-output="headphones" aria-pressed="false">Headphones</button>
           </div>
-          <label class="lighting-field sound-mode-field" id="soundModeField" hidden>
-            <span>Sound mode</span>
-            <select id="soundMode" aria-label="Sound mode"></select>
-          </label>
+          <div class="sound-mode-tools" id="soundModeField" hidden>
+            <label class="lighting-field sound-mode-field">
+              <span>Sound mode</span>
+              <select id="soundMode" aria-label="Sound mode"></select>
+            </label>
+            <div class="sound-mode-actions">
+              <button class="text-button" id="soundModeReset" type="button" title="Return to this mode's stored settings">Reset</button>
+              <button class="text-button" id="soundModeSave" type="button" title="Save the current effects and equalizer as your own sound mode">Save as...</button>
+              <button class="text-button sound-mode-delete" id="soundModeDelete" type="button" hidden>Delete</button>
+            </div>
+            <form class="sound-mode-form" id="soundModeForm" hidden>
+              <input id="soundModeName" type="text" maxlength="40" placeholder="Name this sound mode" aria-label="Sound mode name" autocomplete="off">
+              <button type="submit" class="preset profile-save-button">Save</button>
+              <button type="button" class="text-button" id="soundModeCancel">Cancel</button>
+            </form>
+          </div>
         </div>
 
         <fieldset class="effects-grid" id="effectsGrid" disabled></fieldset>
@@ -250,6 +262,17 @@
           <div class="mic-default">
             <button class="text-button mic-default-button" id="micDefaultButton" type="button">Set as default microphone</button>
             <small id="micDefaultHint">Windows default microphone</small>
+          </div>
+          <div class="mic-eq" id="micEqRow" hidden>
+            <label class="launch-setting">
+              <span><strong>Microphone equalizer</strong><small id="micEqHint">Shapes your voice before it reaches apps</small></span>
+              <input id="micEqEnable" type="checkbox">
+              <span class="toggle" aria-hidden="true"></span>
+            </label>
+            <label class="lighting-field mic-eq-profile">
+              <span>Profile</span>
+              <select id="micEqProfile" aria-label="Microphone equalizer profile"></select>
+            </label>
           </div>
         </fieldset>
       </section>

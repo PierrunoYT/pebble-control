@@ -56,7 +56,7 @@ Creative's Acoustic Engine effects run in the Creative audio driver on the PC an
 - **Processing** at the top turns all effects on or off at once. Turning on any effect turns processing on.
 - **Speakers** and **Headphones** hold separate settings; pick the one that matches how you listen.
 - Each effect has its own switch and level. **Surround** widens the sound stage, **Crystalizer** restores detail lost to compression, **Bass** fills in low frequencies and has a crossover frequency that sets where the boost starts, **Smart Volume** evens out loudness jumps and offers Normal, Loud, and Night modes, and **Dialog+** lifts voices.
-- **Sound mode** applies one of Creative's bundles of effect and equalizer settings in one step, such as Music, Movies, Gaming, or a preset for a particular game. The list shows which mode the current settings match, or Custom once you change anything.
+- **Sound mode** applies one of Creative's bundles of effect and equalizer settings in one step, such as Music, Movies, Gaming, or a preset for a particular game. The list shows which mode the current settings match, or Custom once you change anything. **Save as...** stores the current effects and equalizer as your own sound mode for this output, listed under "Your sound modes"; **Delete** removes one of yours. After tweaking a mode, **Reset** returns to its stored settings.
 
 Changes apply immediately and are shared with Creative App, which shows the same values.
 
@@ -75,6 +75,7 @@ The Pebble X Plus also appears in Windows as a microphone. When it is connected 
 - Drag **Level** or use the mute button to change how loud the microphone records.
 - **Audio quality** lists the formats the microphone accepts. The Pebble X Plus reports one, 16 bit at 48000 Hz mono, so the list is fixed on that model.
 - Select **Set as default microphone** to make Windows use it for recording and calls.
+- **Microphone equalizer** is Creative's CrystalVoice for this speaker: a switch and a profile such as Communication, Broadcast, or Voice Clarity that shapes your voice before apps hear it. It needs Creative App installed, like the Acoustic Engine.
 
 ### Device
 

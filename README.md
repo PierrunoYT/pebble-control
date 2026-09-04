@@ -21,10 +21,10 @@ With a Creative Pebble X Plus connected by USB:
 - Five-stop gradient colors, Morph's two fade colors, effect speed, and direction
 - The speaker's four stored lighting slots
 - Speaker or headphone output switch
-- Microphone level, mute, audio quality, and set as Windows default
+- Microphone level, mute, audio quality, set as Windows default, and the CrystalVoice microphone equalizer
 - Device details: firmware, serial, driver version, and Creative support links
 - Acoustic Engine effects: Surround, Crystalizer, Bass, Smart Volume, and Dialog+ for speakers and headphones
-- Ten-band equalizer with presets, and Creative's sound modes applied in one step
+- Ten-band equalizer with presets, Creative's sound modes applied in one step, and your own saved sound modes
 - Instant response to the speaker being plugged in or removed
 
 ## Requirements

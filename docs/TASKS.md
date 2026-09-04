@@ -54,6 +54,12 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
 - [x] **Configurable shortcuts**
   Keyboard shortcuts panel with key capture, per-shortcut registration status, and reset to defaults.
 
+- [x] **Microphone equalizer (CrystalVoice)**
+  Switch and profile picker on the Microphone panel, using the equalizer keys on the capture endpoint's store and Creative's MicEqProfile files.
+
+- [x] **Custom sound modes**
+  Save as, Delete, and Reset next to the sound mode picker, stored per output in custom-sound-modes.json.
+
 ## Not Planned
 
 - **Firmware and driver updates.** Creative App checks its own servers and installs firmware through a Qualcomm HID DFU interface on usage page `FF99`. Replicating either means depending on Creative's infrastructure and risking a bricked speaker. The Device panel links to Creative's download page instead.

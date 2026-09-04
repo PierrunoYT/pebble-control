@@ -6,7 +6,16 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { bridgeCall } = require('./capture');
+const crypto = require('node:crypto');
+const { bridgeCall, pickPebbleDevice } = require('./capture');
+
+// Folder for user data such as custom sound modes; set by the main process.
+let dataDirectory = null;
+
+function init(directory) {
+  dataDirectory = directory;
+  customModeCache = null;
+}
 
 // One context per output path. Creative App shows them as its Speakers and
 // Headphones tabs; the driver applies whichever matches the active output.
@@ -133,7 +142,7 @@ async function getState(output = 'speakers') {
   };
   if (state.connected) {
     const modes = loadSoundModes(output);
-    state.soundModes = modes.map(({ id, name }) => ({ id, name }));
+    state.soundModes = modes.map(({ id, name, custom }) => ({ id, name, custom: Boolean(custom) }));
     state.soundMode = matchSoundMode(state, await readEqValues(device, output), modes, loadPresets(output));
   }
   return state;
@@ -358,7 +367,7 @@ function readSoundMode(file, output) {
   }
 }
 
-function loadSoundModes(output) {
+function loadCreativeSoundModes(output) {
   if (soundModeCache && soundModeCache.output === output) return soundModeCache.modes;
   let modes = [];
   try {
@@ -374,11 +383,85 @@ function loadSoundModes(output) {
   return modes;
 }
 
+// Custom sound modes are the user's own snapshots of the effects and the
+// equalizer for one output, kept in custom-sound-modes.json. They carry the
+// equalizer gains directly rather than a preset reference.
+let customModeCache = null;
+
+function customModeFile() {
+  return dataDirectory ? path.join(dataDirectory, 'custom-sound-modes.json') : null;
+}
+
+function loadCustomSoundModes() {
+  if (customModeCache) return customModeCache;
+  const file = customModeFile();
+  let modes = [];
+  try {
+    const parsed = file ? JSON.parse(fs.readFileSync(file, 'utf8')) : [];
+    modes = Array.isArray(parsed) ? parsed.filter((m) => m && typeof m.id === 'string' && typeof m.name === 'string' && m.effects && m.eq) : [];
+  } catch (error) {
+    modes = [];
+  }
+  customModeCache = modes;
+  return modes;
+}
+
+function saveCustomSoundModes(modes) {
+  const file = customModeFile();
+  if (!file) throw new Error('Custom sound modes need a data folder');
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(modes, null, 2));
+  customModeCache = modes;
+}
+
+function loadSoundModes(output) {
+  const custom = loadCustomSoundModes()
+    .filter((mode) => mode.output === output)
+    .map((mode) => ({ ...mode, custom: true, order: -1 }));
+  return [...custom, ...loadCreativeSoundModes(output)];
+}
+
+// Saves the live effects and equalizer for an output as a custom sound mode.
+async function saveSoundMode(name, output = 'speakers') {
+  const cleaned = String(name || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+  if (!cleaned) throw new RangeError('A sound mode needs a name');
+  const [state, eq] = [await getState(output), await getEqState(output)];
+  if (!state.connected || !eq.connected) throw new Error('The Pebble speaker output is not present');
+  const modes = loadCustomSoundModes();
+  const existing = modes.find((m) => m.output === output && m.name.toLowerCase() === cleaned.toLowerCase());
+  const mode = {
+    id: existing ? existing.id : `custom:${crypto.randomUUID()}`,
+    name: cleaned,
+    output,
+    effects: Object.fromEntries(Object.entries(state.effects).map(([id, e]) => [id, { enabled: e.enabled, level: e.level, mode: e.mode, crossover: e.crossover }])),
+    eq: { enabled: eq.enabled, preamp: eq.preamp, gains: eq.gains }
+  };
+  saveCustomSoundModes(existing ? modes.map((m) => (m.id === existing.id ? mode : m)) : [...modes, mode]);
+  return { effects: await getState(output), eq };
+}
+
+async function deleteSoundMode(id, output = 'speakers') {
+  saveCustomSoundModes(loadCustomSoundModes().filter((m) => m.id !== id));
+  return { effects: await getState(output), eq: await getEqState(output) };
+}
+
+// Re-applies the mode the live settings last matched, bringing any tweaks
+// back to that mode's stored values. Custom entries reset to their snapshot.
+async function resetSoundMode(id, output = 'speakers') {
+  return applySoundMode(id, output);
+}
+
 function eqPresetForMode(mode, presets) {
   return presets.find((preset) => preset.creativeId && preset.creativeId === mode.eq.presetId) || null;
 }
 
 // Reports which sound mode the live settings equal, or "custom".
+function modeGains(mode, presets) {
+  if (Array.isArray(mode.eq.gains)) return mode.eq.gains;
+  const preset = eqPresetForMode(mode, presets);
+  return preset ? preset.gains : null;
+}
+
 function matchSoundMode(effectsState, eqValues, modes, presets) {
   const eqEnabled = Boolean(parseValue(eqValues.enable));
   const gains = EQ_BANDS.map((_, index) => parseValue(eqValues[`gain${index}`]) ?? 0);
@@ -389,8 +472,8 @@ function matchSoundMode(effectsState, eqValues, modes, presets) {
     if (!Object.entries(mode.effects).every(([id, wanted]) => sameEffect(effectsState.effects[id], wanted))) return false;
     if (eqEnabled !== mode.eq.enabled) return false;
     if (!eqEnabled) return true;
-    const preset = eqPresetForMode(mode, presets);
-    return Boolean(preset) && preset.gains.every((gain, index) => Math.abs(gain - gains[index]) < 0.01);
+    const wantedGains = modeGains(mode, presets);
+    return Boolean(wantedGains) && wantedGains.every((gain, index) => Math.abs(gain - gains[index]) < 0.01);
   });
   return match ? match.id : 'custom';
 }
@@ -409,25 +492,117 @@ async function applySoundMode(id, output = 'speakers') {
     if (effect.crossover && wanted.crossover) await write(device, context, crossoverKey(effect, output), 'float', wanted.crossover);
     await write(device, context, effect.enable, 'bool', wanted.enabled ? 1 : 0);
   }
-  const preset = eqPresetForMode(mode, loadPresets(output));
-  if (preset) {
-    for (let index = 0; index < preset.gains.length; index += 1) {
-      await write(device, context, { guid: EQ_KEYS.gainGuid, pid: index }, 'float', clampGain(preset.gains[index]));
+  const gains = modeGains(mode, loadPresets(output));
+  if (gains) {
+    for (let index = 0; index < gains.length; index += 1) {
+      await write(device, context, { guid: EQ_KEYS.gainGuid, pid: index }, 'float', clampGain(gains[index]));
     }
-    await write(device, context, EQ_KEYS.preamp, 'float', clampGain(preset.preamp));
+    const preamp = Number.isFinite(mode.eq.preamp) ? mode.eq.preamp : (eqPresetForMode(mode, loadPresets(output)) || { preamp: 0 }).preamp;
+    await write(device, context, EQ_KEYS.preamp, 'float', clampGain(preamp));
   }
   await write(device, context, EQ_KEYS.enable, 'bool', mode.eq.enabled ? 1 : 0);
   await write(device, context, MASTER_KEY, 'bool', 1);
   return { effects: await getState(output), eq: await getEqState(output) };
 }
 
+// Microphone equalizer: Creative's CrystalVoice page for the Pebble X Plus is
+// a switch plus a profile list. It uses the same equalizer keys on the
+// microphone endpoint's store, and the profiles live next to the others.
+const CREATIVE_MIC_EQ_DIR = path.join(process.env.ProgramData || 'C:\\ProgramData', 'Creative', 'CreativeApp', 'Product', 'MF0495', 'MicEqProfile');
+const MIC_EQ_CONTEXT = CONTEXTS.speakers;
+
+let micProfileCache = null;
+
+function readMicProfile(file) {
+  try {
+    const data = JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, ''));
+    const settings = (data.Settings || [])[0];
+    if (!settings || !Array.isArray(settings.Bands) || settings.Bands.length !== EQ_BANDS.length) return null;
+    const id = data.Id || path.basename(file, '.json');
+    return {
+      id: `mic:${id}`,
+      name: String(id).replace(/([a-z])([A-Z])/g, '$1 $2'),
+      order: Number(data.Order) || 0,
+      preamp: Number(settings.PreAmp) || 0,
+      gains: settings.Bands.map((band) => Number(band.Value) || 0)
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+function loadMicProfiles() {
+  if (micProfileCache) return micProfileCache;
+  let profiles = [];
+  try {
+    profiles = fs.readdirSync(CREATIVE_MIC_EQ_DIR)
+      .filter((file) => file.endsWith('.json'))
+      .map((file) => readMicProfile(path.join(CREATIVE_MIC_EQ_DIR, file)))
+      .filter(Boolean)
+      .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
+  } catch (error) {
+    profiles = [];
+  }
+  if (profiles.length === 0) profiles = [{ id: 'mic:Flat', name: 'Flat', order: 0, preamp: 0, gains: EQ_BANDS.map(() => 0) }];
+  micProfileCache = profiles;
+  return profiles;
+}
+
+async function pebbleCaptureDevice() {
+  const { devices } = await bridgeCall({ op: 'list' });
+  return pickPebbleDevice(devices);
+}
+
+async function getMicEqState() {
+  const device = await pebbleCaptureDevice();
+  if (!device) return { connected: false };
+  const { values } = await bridgeCall({ op: 'effects-get', id: device.id, context: MIC_EQ_CONTEXT, keys: eqKeyList() });
+  const gains = EQ_BANDS.map((_, index) => parseValue(values[`gain${index}`]));
+  if (gains.every((gain) => gain === null)) return { connected: false };
+  const profiles = loadMicProfiles();
+  const resolved = gains.map((gain) => gain ?? 0);
+  return {
+    connected: true,
+    enabled: Boolean(parseValue(values.enable)),
+    profile: matchPreset(resolved, profiles),
+    profiles: profiles.map(({ id, name }) => ({ id, name })),
+    gains: resolved
+  };
+}
+
+// Applies enabled and/or a profile id from the list to the microphone equalizer.
+async function setMicEq(changes) {
+  const device = await pebbleCaptureDevice();
+  if (!device) throw new Error('The Pebble microphone is not present');
+  if (changes.profile !== undefined) {
+    const profile = loadMicProfiles().find((candidate) => candidate.id === changes.profile);
+    if (!profile) throw new TypeError('Unknown microphone profile');
+    for (let index = 0; index < profile.gains.length; index += 1) {
+      await write(device, MIC_EQ_CONTEXT, { guid: EQ_KEYS.gainGuid, pid: index }, 'float', clampGain(profile.gains[index]));
+    }
+    await write(device, MIC_EQ_CONTEXT, EQ_KEYS.preamp, 'float', clampGain(profile.preamp));
+  }
+  if (changes.enabled !== undefined) {
+    await write(device, MIC_EQ_CONTEXT, EQ_KEYS.enable, 'bool', changes.enabled ? 1 : 0);
+  }
+  return getMicEqState();
+}
+
 module.exports = {
+  init,
   getState,
   setEffect,
   setMaster,
   getEqState,
   setEq,
   applySoundMode,
+  saveSoundMode,
+  deleteSoundMode,
+  resetSoundMode,
+  loadCustomSoundModes,
+  getMicEqState,
+  setMicEq,
+  readMicProfile,
   loadSoundModes,
   readSoundMode,
   matchSoundMode,

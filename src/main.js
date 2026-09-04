@@ -145,6 +145,11 @@ ipcMain.handle('effects:get-state', (_event, output) => effects.getState(output)
 ipcMain.handle('effects:set', (_event, id, changes, output) => effects.setEffect(id, changes || {}, output));
 ipcMain.handle('effects:set-master', (_event, enabled, output) => effects.setMaster(Boolean(enabled), output));
 ipcMain.handle('effects:apply-sound-mode', (_event, id, output) => effects.applySoundMode(id, output));
+ipcMain.handle('effects:save-sound-mode', (_event, name, output) => effects.saveSoundMode(name, output));
+ipcMain.handle('effects:delete-sound-mode', (_event, id, output) => effects.deleteSoundMode(String(id), output));
+ipcMain.handle('effects:reset-sound-mode', (_event, id, output) => effects.resetSoundMode(String(id), output));
+ipcMain.handle('mic-eq:get-state', () => effects.getMicEqState());
+ipcMain.handle('mic-eq:set', (_event, changes) => effects.setMicEq(changes || {}));
 ipcMain.handle('eq:get-state', (_event, output) => effects.getEqState(output));
 ipcMain.handle('eq:set', (_event, changes, output) => effects.setEq(changes || {}, output));
 
@@ -232,6 +237,7 @@ function watchSpeakerPresence() {
 
 app.whenReady().then(() => {
   settings.init(app.getPath('userData'));
+  effects.init(app.getPath('userData'));
   profiles = createStore({ directory: app.getPath('userData'), capture: captureSnapshot, apply: applySnapshot });
   // With "Start in tray" on, the window is created but stays hidden until the
   // tray icon is clicked; the tray must exist first so the app stays reachable.

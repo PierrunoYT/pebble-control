@@ -703,6 +703,59 @@ async function syncMic() {
   }
 }
 
+// Microphone equalizer: Creative's CrystalVoice for this speaker.
+const micEqRow = document.querySelector('#micEqRow');
+const micEqEnable = document.querySelector('#micEqEnable');
+const micEqProfile = document.querySelector('#micEqProfile');
+const micEqHint = document.querySelector('#micEqHint');
+let micEqState = { connected: false, enabled: false, profile: 'custom', profiles: [] };
+
+function renderMicEq(nextState) {
+  micEqState = { ...micEqState, ...nextState };
+  micEqRow.hidden = !micEqState.connected;
+  if (!micEqState.connected) return;
+  micEqEnable.checked = micEqState.enabled;
+  const wanted = [...micEqState.profiles.map((profile) => profile.id), 'custom'];
+  if ([...micEqProfile.options].map((option) => option.value).join() !== wanted.join()) {
+    micEqProfile.replaceChildren(...micEqState.profiles.map((profile) => Object.assign(document.createElement('option'), { value: profile.id, textContent: profile.name })),
+      Object.assign(document.createElement('option'), { value: 'custom', textContent: 'Custom' }));
+  }
+  micEqProfile.value = micEqState.profile;
+  micEqHint.textContent = micEqState.enabled ? 'Shaping your voice before it reaches apps' : 'Off; apps hear the microphone as is';
+}
+
+async function syncMicEq() {
+  try {
+    renderMicEq(await window.pebble.getMicEqState());
+  } catch (error) {
+    console.error('Microphone equalizer sync failed:', error);
+    renderMicEq({ connected: false });
+  }
+}
+
+micEqEnable.addEventListener('change', async () => {
+  const enabled = micEqEnable.checked;
+  renderMicEq({ enabled });
+  try {
+    renderMicEq(await window.pebble.setMicEq({ enabled }));
+    micStatus.textContent = enabled ? 'Microphone equalizer on' : 'Microphone equalizer off';
+  } catch (error) {
+    renderMicEq({ enabled: !enabled });
+    micStatus.textContent = 'Could not change the microphone equalizer';
+  }
+});
+
+micEqProfile.addEventListener('change', async () => {
+  if (micEqProfile.value === 'custom') return;
+  try {
+    renderMicEq(await window.pebble.setMicEq({ profile: micEqProfile.value }));
+    micStatus.textContent = `${micEqProfile.selectedOptions[0].textContent} profile applied`;
+  } catch (error) {
+    micStatus.textContent = 'Could not change the microphone profile';
+    await syncMicEq();
+  }
+});
+
 micVolume.addEventListener('pointerdown', () => { isAdjustingMic = true; });
 window.addEventListener('pointerup', () => { isAdjustingMic = false; });
 micVolume.addEventListener('input', () => {
@@ -898,21 +951,89 @@ function renderEffects(nextState) {
   renderSoundModes();
 }
 
+const soundModeReset = document.querySelector('#soundModeReset');
+const soundModeSave = document.querySelector('#soundModeSave');
+const soundModeDelete = document.querySelector('#soundModeDelete');
+const soundModeForm = document.querySelector('#soundModeForm');
+const soundModeName = document.querySelector('#soundModeName');
+const soundModeCancel = document.querySelector('#soundModeCancel');
+let lastSoundMode = 'custom';
+
 function renderSoundModes() {
   const modes = Array.isArray(effectsState.soundModes) ? effectsState.soundModes : [];
   soundModeField.hidden = modes.length === 0;
   if (modes.length === 0) return;
   const wanted = [...modes.map((mode) => mode.id), 'custom'];
   if ([...soundMode.options].map((option) => option.value).join() !== wanted.join()) {
-    soundMode.replaceChildren(...modes.map((mode) => {
-      const option = document.createElement('option');
-      option.value = mode.id;
-      option.textContent = mode.name;
-      return option;
-    }), Object.assign(document.createElement('option'), { value: 'custom', textContent: 'Custom' }));
+    const custom = modes.filter((mode) => mode.custom);
+    const creative = modes.filter((mode) => !mode.custom);
+    const group = (label, list) => {
+      const optgroup = document.createElement('optgroup');
+      optgroup.label = label;
+      optgroup.append(...list.map((mode) => Object.assign(document.createElement('option'), { value: mode.id, textContent: mode.name })));
+      return optgroup;
+    };
+    soundMode.replaceChildren(
+      ...(custom.length ? [group('Your sound modes', custom)] : []),
+      group('Creative', creative),
+      Object.assign(document.createElement('option'), { value: 'custom', textContent: 'Custom' })
+    );
   }
-  soundMode.value = effectsState.soundMode || 'custom';
+  const current = effectsState.soundMode || 'custom';
+  soundMode.value = current;
+  if (current !== 'custom') lastSoundMode = current;
+  const selected = modes.find((mode) => mode.id === current);
+  soundModeDelete.hidden = !(selected && selected.custom);
+  soundModeReset.hidden = current !== 'custom' || lastSoundMode === 'custom' || !modes.some((mode) => mode.id === lastSoundMode);
 }
+
+async function runSoundModeAction(action, label) {
+  lastEffectEdit = Date.now();
+  lastEqEdit = Date.now();
+  try {
+    const result = await action();
+    renderEffects(result.effects);
+    renderEq(result.eq);
+    effectsStatus.textContent = label;
+  } catch (error) {
+    effectsStatus.textContent = `Could not ${label.toLowerCase()}`;
+    await Promise.all([syncEffects(), syncEq()]);
+  }
+}
+
+soundModeReset.addEventListener('click', () => {
+  const name = [...soundMode.options].find((option) => option.value === lastSoundMode)?.textContent || 'sound mode';
+  runSoundModeAction(() => window.pebble.resetSoundMode(lastSoundMode, effectsOutput), `${name} restored`);
+});
+
+soundModeSave.addEventListener('click', () => {
+  soundModeForm.hidden = false;
+  soundModeName.focus();
+});
+
+soundModeCancel.addEventListener('click', () => {
+  soundModeForm.hidden = true;
+  soundModeName.value = '';
+});
+
+soundModeForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const name = soundModeName.value.trim();
+  if (!name) {
+    soundModeName.focus();
+    return;
+  }
+  soundModeForm.hidden = true;
+  soundModeName.value = '';
+  runSoundModeAction(() => window.pebble.saveSoundMode(name, effectsOutput), `Saved ${name}`);
+});
+
+soundModeDelete.addEventListener('click', () => {
+  const id = soundMode.value;
+  const name = soundMode.selectedOptions[0]?.textContent || 'sound mode';
+  lastSoundMode = 'custom';
+  runSoundModeAction(() => window.pebble.deleteSoundMode(id, effectsOutput), `Deleted ${name}`);
+});
 
 async function syncEffects() {
   try {
@@ -1150,6 +1271,8 @@ async function initialize() {
   window.setInterval(syncLighting, 5000);
   syncMic();
   window.setInterval(syncMic, 5000);
+  syncMicEq();
+  window.setInterval(syncMicEq, 5000);
   syncEffects();
   window.setInterval(syncEffects, 5000);
   syncEq();
@@ -1167,6 +1290,7 @@ async function initialize() {
     lightingStatus.textContent = 'Speaker connected';
     await syncLighting();
     await syncMic();
+    await syncMicEq();
     await syncEffects();
     await syncEq();
     await syncDeviceInfo();
