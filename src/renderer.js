@@ -57,6 +57,7 @@ function renderLighting(nextState) {
   lightingControls.disabled = !connected;
   lightingToggle.disabled = !connected;
   lightingToggle.checked = connected && lightingState.enabled;
+  renderModeOptions();
   lightingMode.value = String(lightingState.mode);
   const hasSpeed = Number.isInteger(lightingState.speed);
   lightingSpeedField.classList.toggle('unsupported', !hasSpeed);
@@ -72,12 +73,36 @@ function renderLighting(nextState) {
   lightingBrightness.value = lightingState.brightness;
   lightingBrightness.style.setProperty('--volume', `${(lightingState.brightness / 255) * 100}%`);
   lightingBrightnessValue.textContent = lightingState.brightness;
+}
 
-  if (Array.isArray(lightingState.supportedModes)) {
-    [...lightingMode.options].forEach((option) => {
-      option.disabled = !lightingState.supportedModes.includes(Number(option.value));
-    });
-  }
+// Builds the effect list from the modes the speaker reports, in the order the
+// speaker lists them. The markup's options remain as a fallback until then.
+function renderModeOptions() {
+  const supported = lightingState.supportedModes;
+  const names = lightingState.modes;
+  if (!Array.isArray(supported) || !names) return;
+  const current = [...lightingMode.options].map((option) => option.value).join();
+  if (current === supported.join()) return;
+  lightingMode.replaceChildren(...supported.map((mode) => {
+    const option = document.createElement('option');
+    option.value = String(mode);
+    option.textContent = names[mode] || `Effect ${mode}`;
+    return option;
+  }));
+}
+
+// Applies what the capability record says an effect supports before the
+// speaker confirms the change, so the controls settle immediately.
+function previewCapabilities(mode) {
+  const capabilities = lightingState.capabilities?.[mode];
+  if (!capabilities) return {};
+  return {
+    speed: capabilities.speed ? lightingState.speed : null,
+    direction: capabilities.direction ? lightingState.direction : null,
+    directionSupport: capabilities.direction,
+    colors: capabilities.colors ? lightingState.colors : [],
+    colors2: capabilities.colors2 ? lightingState.colors2 : []
+  };
 }
 
 // Option values are the direction number for looping, or "bounce".
@@ -298,7 +323,7 @@ lightingDirection.addEventListener('change', async () => {
 lightingMode.addEventListener('change', async () => {
   const previousMode = lightingState.mode;
   const mode = Number(lightingMode.value);
-  renderLighting({ mode });
+  renderLighting({ mode, ...previewCapabilities(mode) });
   try {
     renderLighting(await window.pebble.setLightingMode(mode));
     lightingStatus.textContent = `${lightingMode.selectedOptions[0].textContent} effect applied`;

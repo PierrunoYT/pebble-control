@@ -13,7 +13,7 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
 - [x] **Morph second colour**
   Read and write customization type 2 for Morph so both fade colours can be edited. Show a second well next to the first one only when the effect is Morph.
 
-- [ ] **Capability-driven controls**
+- [x] **Capability-driven controls**
   Query operation `0x22` for each supported mode at connect time and show or hide the colour, speed, and direction controls from the reply instead of hardcoding per effect.
 
 - [ ] **Slot switching**

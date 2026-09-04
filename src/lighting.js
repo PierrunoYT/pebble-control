@@ -185,6 +185,42 @@ function readDirectionSupport(device, mode) {
   return null;
 }
 
+// Parses one 0x22 reply into the customization types the mode accepts.
+function parseCapabilities(payload) {
+  const capabilities = { colors: false, colors2: false, speed: false, direction: null };
+  let offset = 3;
+  for (let i = 0; i < payload[2] && offset + 2 <= payload.length; i += 1) {
+    const [type, length] = payload.slice(offset, offset + 2);
+    if (type === CUSTOMIZATION.color) capabilities.colors = true;
+    if (type === CUSTOMIZATION.color2) capabilities.colors2 = true;
+    if (type === CUSTOMIZATION.speed) capabilities.speed = true;
+    if (type === CUSTOMIZATION.direction && length >= 1) {
+      const mask = payload[offset + 2];
+      capabilities.direction = { leftRight: (mask & 1) !== 0, upDown: (mask & 2) !== 0, bouncing: (mask & 4) !== 0 };
+    }
+    offset += 2 + length;
+  }
+  return capabilities;
+}
+
+// Capability records never change for a given firmware, so they are read once
+// per connection and reused by every state poll.
+let capabilityCache = null;
+
+function readCapabilities(device, supportedModes) {
+  if (capabilityCache) return capabilityCache;
+  const capabilities = {};
+  supportedModes.forEach((mode) => {
+    try {
+      capabilities[mode] = parseCapabilities(query(device, [OPERATION.getSupportedCustomization, mode]));
+    } catch (error) {
+      capabilities[mode] = { colors: false, colors2: false, speed: false, direction: null };
+    }
+  });
+  capabilityCache = capabilities;
+  return capabilities;
+}
+
 // Returns { direction, bouncing } for the active effect, or null.
 function readDirection(device, activeIndex) {
   try {
@@ -238,6 +274,7 @@ function withDevice(action) {
 
 async function getState() {
   if (!findDevice()) {
+    capabilityCache = null;
     return { connected: false, deviceName: 'Creative Pebble X Plus' };
   }
 
@@ -253,6 +290,7 @@ async function getState() {
     const speed = readSpeed(device, activeIndex);
     const direction = readDirection(device, activeIndex);
     const directionSupport = direction ? readDirectionSupport(device, mode) : null;
+    const capabilities = readCapabilities(device, supportedModes);
     const output = readOutputTargets(device);
 
     return {
@@ -272,7 +310,8 @@ async function getState() {
       direction,
       directionSupport,
       supportedModes,
-      modes: MODES
+      modes: MODES,
+      capabilities
     };
   });
 }

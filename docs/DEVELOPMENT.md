@@ -120,7 +120,7 @@ The window uses `contextIsolation`, disables renderer Node.js integration, and r
 | `setMuted(muted)` | `boolean` | Set the system mute state |
 | `getLaunchAtLogin()` | `boolean` | Read the startup preference |
 | `setLaunchAtLogin(enabled)` | `boolean` | Update and return the startup preference |
-| `getLightingState()` | lighting state object | Read Pebble X Plus connection, power, brightness, mode, the active effect's color list, and the current and supported output targets |
+| `getLightingState()` | lighting state object | Read Pebble X Plus connection, power, brightness, mode, the active effect's colors, speed, and direction, the per-mode capability records, and the current and supported output targets |
 | `setLightingEnabled(enabled)` | `boolean` | Enable or disable the RGB LEDs |
 | `setLightingBrightness(value)` | `number` | Set hardware brightness from 0 to 255 |
 | `setLightingMode(mode)` | `{ mode, colors, color, speed, direction, directionSupport }` | Select a validated, device-supported effect and return its color list, speed, and direction |
@@ -132,6 +132,8 @@ The window uses `contextIsolation`, disables renderer Node.js integration, and r
 | `setOutputTarget(target)` | `{ outputTarget, outputTargets }` | Route audio to the speakers (`2`) or the headphone jack (`4`) |
 
 ### Renderer
+
+The lighting panel is capability driven: the effect list is built from the modes the speaker reports, and the colour, speed, and direction controls follow the capability record of the active effect rather than a hardcoded table. Capability records are read once per connection and cached in `src/lighting.js`.
 
 `src/renderer.js` maintains the displayed volume and mute state. It polls the operating system every 2.5 seconds so external volume changes are reflected in the interface. Slider writes are briefly debounced to avoid launching excessive system volume operations.
 
