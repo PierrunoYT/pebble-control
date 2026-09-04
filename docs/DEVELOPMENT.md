@@ -123,9 +123,10 @@ The window uses `contextIsolation`, disables renderer Node.js integration, and r
 | `getLightingState()` | lighting state object | Read Pebble X Plus connection, power, brightness, mode, the active effect's color list, and the current and supported output targets |
 | `setLightingEnabled(enabled)` | `boolean` | Enable or disable the RGB LEDs |
 | `setLightingBrightness(value)` | `number` | Set hardware brightness from 0 to 255 |
-| `setLightingMode(mode)` | `{ mode, colors, color }` | Select a validated, device-supported effect and return its color list |
+| `setLightingMode(mode)` | `{ mode, colors, color, speed }` | Select a validated, device-supported effect and return its color list and speed |
 | `setLightingColor(color)` | `{ color, colors, mode }` | Switch to Static and fill every gradient stop with one `#RRGGBB` color |
 | `setLightingColors(colors)` | `{ colors, mode }` | Replace the active effect's color list; the length must match what the effect holds |
+| `setLightingSpeed(speed)` | `{ speed, mode }` | Set the active effect's speed to one of the seven firmware presets in milliseconds |
 | `setOutputTarget(target)` | `{ outputTarget, outputTargets }` | Route audio to the speakers (`2`) or the headphone jack (`4`) |
 
 ### Renderer

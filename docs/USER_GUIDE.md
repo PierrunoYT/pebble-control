@@ -61,6 +61,7 @@ Connect the Creative Pebble X Plus directly by USB. The Ambient lighting panel b
 
 - Use **Lighting** to turn the RGB LEDs on or off.
 - Select Chasers, Aurora, Peak Meter, Glowing, Wave, Cycle, Static, or Morph from **Effect**.
+- Choose a **Speed** from Slowest to Fastest for Cycle, Wave, Morph, Aurora, Glowing, and Chasers. The control is dimmed for Static and Peak Meter, which have no speed.
 - Drag **Brightness** to set the hardware brightness from 0 to 255.
 - Pick the effect's colors from the color wells. Static, Glowing, Wave, and Peak Meter use a five-stop gradient that blends across both speakers; Morph and Chasers use one color; Cycle and Aurora have no adjustable colors.
 - Use **Use one color for all stops** to turn a gradient into a single flat color, then adjust any stop to bring the gradient back.

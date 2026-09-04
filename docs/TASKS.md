@@ -4,7 +4,7 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
 
 ## Lighting
 
-- [ ] **Effect speed control**
+- [x] **Effect speed control**
   Add a speed selector for Cycle, Wave, Morph, Aurora, Glowing, and Chasers using customization type 3. Offer the seven firmware presets: 6000 Slowest, 4000 Slower, 2500 Slow, 1333 Normal, 750 Fast, 375 Faster, 250 Fastest. Reject any other value in `lighting.js` before it reaches the device.
 
 - [ ] **Direction control**

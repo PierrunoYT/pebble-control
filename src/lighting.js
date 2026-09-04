@@ -42,6 +42,9 @@ const MODES = Object.freeze({
   0x0b: 'Chasers'
 });
 
+// Effect speed in milliseconds. The firmware only accepts these seven values.
+const SPEED_PRESETS = Object.freeze([6000, 4000, 2500, 1333, 750, 375, 250]);
+
 const RESPONSE_TIMEOUT_MS = 1500;
 
 function findDevice() {
@@ -90,12 +93,14 @@ function isRejection(response, operation, command) {
 function query(device, payload, command = COMMAND.ledControl) {
   device.write(encode(payload, command));
   const operation = payload[0];
-  const index = command === COMMAND.ledControl && payload.length > 1 ? payload[1] : null;
+  // LED replies echo the slot and, for customization reads, the type byte.
+  // Matching on both keeps pushed reports from being taken as the reply.
+  const echoed = command === COMMAND.ledControl ? payload.slice(1, 3) : [];
   const response = waitFor(device, (candidate) => (
     isRejection(candidate, operation, command) || (
       candidate.command === command
       && candidate.payload[0] === operation
-      && (index === null || candidate.payload[1] === index)
+      && echoed.every((value, offset) => candidate.payload[offset + 1] === value)
     )
   ));
   if (response[0] === command && response[2] === operation && response.length === 3) {
@@ -157,6 +162,16 @@ function readColors(device, activeIndex) {
   }
 }
 
+// Returns the effect speed in milliseconds, or null when the effect has none.
+function readSpeed(device, activeIndex) {
+  try {
+    const payload = query(device, [OPERATION.getCustomization, activeIndex, CUSTOMIZATION.speed]);
+    return payload[3] | (payload[4] << 8);
+  } catch (error) {
+    return null;
+  }
+}
+
 function colorToBytes(color) {
   if (typeof color !== 'string' || !/^#[0-9a-f]{6}$/i.test(color)) {
     throw new TypeError('Color must use #RRGGBB format');
@@ -201,6 +216,7 @@ async function getState() {
     const activeIndex = query(device, [OPERATION.getActiveIndex])[1];
     const mode = query(device, [OPERATION.getMode, activeIndex])[2];
     const colors = readColors(device, activeIndex);
+    const speed = readSpeed(device, activeIndex);
     const output = readOutputTargets(device);
 
     return {
@@ -214,6 +230,8 @@ async function getState() {
       mode,
       color: colors[0] || '#ffffff',
       colors,
+      speed,
+      speeds: SPEED_PRESETS,
       supportedModes,
       modes: MODES
     };
@@ -250,7 +268,20 @@ function setMode(requestedMode) {
     const activeIndex = query(device, [OPERATION.getActiveIndex])[1];
     update(device, [OPERATION.setMode, activeIndex, mode]);
     const colors = readColors(device, activeIndex);
-    return { mode, colors, color: colors[0] || '#ffffff' };
+    return { mode, colors, color: colors[0] || '#ffffff', speed: readSpeed(device, activeIndex) };
+  });
+}
+
+// Sets the active effect's speed to one of the firmware presets.
+function setSpeed(requestedSpeed) {
+  const speed = Number(requestedSpeed);
+  if (!SPEED_PRESETS.includes(speed)) throw new RangeError('Speed must be one of the firmware presets');
+  return withDevice((device) => {
+    const activeIndex = query(device, [OPERATION.getActiveIndex])[1];
+    const mode = query(device, [OPERATION.getMode, activeIndex])[2];
+    if (readSpeed(device, activeIndex) === null) throw new TypeError('The active lighting effect has no speed');
+    update(device, [OPERATION.setCustomization, activeIndex, CUSTOMIZATION.speed, speed & 0xff, speed >> 8]);
+    return { speed, mode };
   });
 }
 
@@ -312,4 +343,4 @@ function setOutputTarget(requestedTarget) {
   });
 }
 
-module.exports = { getState, setEnabled, setBrightness, setMode, setColor, setColors, setOutputTarget };
+module.exports = { getState, setEnabled, setBrightness, setMode, setColor, setColors, setSpeed, setOutputTarget };

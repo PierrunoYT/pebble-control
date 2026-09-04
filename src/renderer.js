@@ -12,6 +12,8 @@ const lightingControls = document.querySelector('#lightingControls');
 const lightingToggle = document.querySelector('#lightingToggle');
 const lightingStatus = document.querySelector('#lightingStatus');
 const lightingMode = document.querySelector('#lightingMode');
+const lightingSpeed = document.querySelector('#lightingSpeed');
+const lightingSpeedField = document.querySelector('#lightingSpeedField');
 const lightingColors = document.querySelector('#lightingColors');
 const lightingColorsTitle = document.querySelector('#lightingColorsTitle');
 const lightingColorsHint = document.querySelector('#lightingColorsHint');
@@ -51,6 +53,11 @@ function renderLighting(nextState) {
   lightingToggle.disabled = !connected;
   lightingToggle.checked = connected && lightingState.enabled;
   lightingMode.value = String(lightingState.mode);
+  const hasSpeed = Number.isInteger(lightingState.speed);
+  lightingSpeedField.classList.toggle('unsupported', !hasSpeed);
+  lightingSpeed.disabled = !hasSpeed;
+  lightingSpeed.setAttribute('aria-disabled', String(!hasSpeed));
+  if (hasSpeed) lightingSpeed.value = String(lightingState.speed);
   renderColorStops(Array.isArray(lightingState.colors) ? lightingState.colors : []);
   renderOutputTarget(connected);
   lightingBrightness.value = lightingState.brightness;
@@ -212,6 +219,19 @@ lightingToggle.addEventListener('change', async () => {
   } catch (error) {
     renderLighting({ enabled: !enabled });
     lightingStatus.textContent = 'Could not change lighting power';
+  }
+});
+
+lightingSpeed.addEventListener('change', async () => {
+  const previousSpeed = lightingState.speed;
+  const speed = Number(lightingSpeed.value);
+  renderLighting({ speed });
+  try {
+    renderLighting(await window.pebble.setLightingSpeed(speed));
+    lightingStatus.textContent = `${lightingSpeed.selectedOptions[0].textContent} speed applied`;
+  } catch (error) {
+    renderLighting({ speed: previousSpeed });
+    lightingStatus.textContent = 'Could not change effect speed';
   }
 });
 
