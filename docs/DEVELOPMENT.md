@@ -6,7 +6,7 @@
 - Plain HTML, CSS, and JavaScript for the renderer
 - [`loudness`](https://www.npmjs.com/package/loudness) for Windows master volume access
 - [`node-hid`](https://www.npmjs.com/package/node-hid) for Pebble X Plus USB lighting and output control
-- Windows PowerShell 5.1, bundled with Windows, for the Core Audio microphone bridge
+- Windows PowerShell 5.1, bundled with Windows, for the Core Audio bridge behind the microphone and Acoustic Engine panels
 - Node's built-in test runner for the unit tests
 - `electron-builder` for the NSIS installer
 
@@ -29,9 +29,14 @@ Pebble Control/
 |   |-- index.html    Application markup
 |   |-- styles.css    Responsive visual design
 |   `-- renderer.js   UI state and interactions
+|   `-- assets/       Window, taskbar, and tray icons
+|-- build/            Installer icon consumed by electron-builder
+|-- scripts/          make-icons.js icon generator
+|-- test/             Unit tests and the scripted fake speaker
 |-- docs/
 |   |-- USER_GUIDE.md
-|   `-- DEVELOPMENT.md
+|   |-- DEVELOPMENT.md
+|   `-- TASKS.md
 |-- CHANGELOG.md
 |-- package.json
 `-- README.md
@@ -51,6 +56,18 @@ The application is Windows-focused. The renderer can load on other platforms, bu
 ## Architecture
 
 ### Main Process
+
+`src/main.js` creates the application window and owns all operating-system access. It reads and writes the Windows master volume through `loudness`, delegates Pebble X Plus RGB access to `src/lighting.js`, and manages the launch-at-login setting through Electron.
+
+`src/lighting.js` matches only USB device `041E:329A` on vendor usage page `FF01`. It serializes access, validates semantic values, correlates responses, and checks device acknowledgements. Raw HID reports and device paths are never accepted over IPC.
+
+`src/main.js` also owns the tray icon. Closing the window hides it; the tray menu is rebuilt from live mute and lighting state each time it opens, and its Quit item is what ends the process. `npm run icon` (`scripts/make-icons.js`) renders the pebble mark without any image library and writes `build/icon.ico` for the installer and executable, `build/icon.png` and `src/assets/icon.png` for the window and taskbar, and `src/assets/tray.png` for the tray. electron-builder picks up `build/icon.ico` through `build.win.icon`.
+
+`src/main.js` registers the global shortcuts from `settings.shortcuts` (defaults Ctrl+Alt+Up, Ctrl+Alt+Down, and Ctrl+Alt+M) through Electron's `globalShortcut`, re-registers the whole set when the user changes one, and releases them on quit. Each shortcut's registration result is kept and reported to the renderer, so a combination held by another app shows as such instead of failing silently. `src/accelerator.js` converts a keyboard event into an accelerator string; it is loaded as a plain script by the renderer and as a module by the tests.
+
+`src/settings.js` keeps `settings.json` in Electron's user data folder and accepts only known keys with sane types, so a hand-edited file cannot inject values. With `startInTray` set, the window is created hidden after the tray exists.
+
+`src/profiles.js` keeps `profiles.json` next to the settings and is independent of the hardware: it takes a capture function and an apply function, which `src/snapshot.js` provides using the lighting and effects modules. Apply restores the lighting slot first, then the output, then each output's effects and equalizer, and sets the Acoustic Engine master last so a profile saved with processing off ends up off.
 
 ### Audio Bridge
 
@@ -72,18 +89,6 @@ Creative App configures its driver effects through Windows' `IAudioSystemEffects
 | Dialog+ enable, level | `ea3137f9-be10-4eaa-8fce-a36988bca7dd`, 0 and `a79717e9-81cf-4272-adc6-d12b69b389a0`, 0 | bool, float 0 to 1 |
 
 The graphic equalizer lives in the same store: enable `9a9d0cb2-4dc9-494c-8210-9848ae1aa629`, 0 (bool), preamp `ddcf8d90-de27-4de4-af57-088b8ad78fdf`, 0 (float dB), and gains `2b88c76d-d07c-4e97-8922-1bac9f6d5935`, 0 to 9 (float dB) for 31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, and 16000 Hz. Creative App's factory presets are JSON files under `%ProgramData%\Creative\CreativeApp\Product\MF0495\Presets\EQ`, each with Speaker and Headphone band lists; `src/effects.js` reads them when present and falls back to built-in curves. The bass crossover frequency is `3f23dbc5-12d1-4d62-89ed-bc458337e0fc` with ID 0 for external speakers and 2 for headphones, in Hz. Creative's sound modes are JSON files under `...\Product\MF0495\SoundMode`, each with Speaker and Headphone sections holding every effect's enable, level, and mode plus an equalizer preset reference by `Id`; `applySoundMode` writes them all and turns the master on, and `getState` reports which mode the live settings match.
-
-`src/main.js` registers the global shortcuts from `settings.shortcuts` (defaults Ctrl+Alt+Up, Ctrl+Alt+Down, and Ctrl+Alt+M) through Electron's `globalShortcut`, re-registers the whole set when the user changes one, and releases them on quit. Each shortcut's registration result is kept and reported to the renderer, so a combination held by another app shows as such instead of failing silently. `src/accelerator.js` converts a keyboard event into an accelerator string; it is loaded as a plain script by the renderer and as a module by the tests.
-
-`src/profiles.js` keeps `profiles.json` next to the settings and is independent of the hardware: it takes a capture function and an apply function, which `src/snapshot.js` provides using the lighting and effects modules. Apply restores the lighting slot first, then the output, then each output's effects and equalizer, and sets the Acoustic Engine master last so a profile saved with processing off ends up off.
-
-`src/settings.js` keeps `settings.json` in Electron's user data folder and accepts only known keys with sane types, so a hand-edited file cannot inject values. With `startInTray` set, the window is created hidden after the tray exists.
-
-`src/main.js` also owns the tray icon. Closing the window hides it; the tray menu is rebuilt from live mute and lighting state each time it opens, and its Quit item is what ends the process. `npm run icon` (`scripts/make-icons.js`) renders the pebble mark without any image library and writes `build/icon.ico` for the installer and executable, `build/icon.png` and `src/assets/icon.png` for the window and taskbar, and `src/assets/tray.png` for the tray. electron-builder picks up `build/icon.ico` through `build.win.icon`.
-
-`src/main.js` creates the application window and owns all operating-system access. It reads and writes the Windows master volume through `loudness`, delegates Pebble X Plus RGB access to `src/lighting.js`, and manages the launch-at-login setting through Electron.
-
-`src/lighting.js` matches only USB device `041E:329A` on vendor usage page `FF01`. It serializes access, validates semantic values, correlates responses, and checks device acknowledgements. Raw HID reports and device paths are never accepted over IPC.
 
 ### Lighting Protocol Reference
 
@@ -209,6 +214,8 @@ The renderer uses `navigator.mediaDevices.enumerateDevices()` only to display an
 | --- | --- |
 | `npm start` | Run the app in Electron |
 | `npm run check` | Check JavaScript syntax |
+| `npm test` | Run the unit tests with Node's test runner |
+| `npm run icon` | Regenerate the installer, window, and tray icons |
 | `npm run dist` | Build the x64 Windows NSIS installer |
 
 ## Verification
@@ -217,15 +224,18 @@ Before a release:
 
 1. Run `npm run check` and `npm test`. The tests in `test/` run the lighting module against a scripted fake speaker (`test/fake-hid.js`) and cover report framing, colour decoding, rejection handling, capability parsing, slots, and the output target, plus the microphone device selection and format labels, so protocol changes can be checked without hardware.
 2. Run `npm start` and test volume, mute, every preset, and launch at startup.
-3. With a Pebble X Plus on USB: switch slots and effects, edit colours, speed, and direction, toggle lighting power, switch between Speakers and Headphones, and change the microphone level and mute. Confirm the Device panel shows firmware 1.27 or newer, the Creative driver version, and that each support link opens in the browser. In the Acoustic Engine panel, enable an effect and confirm Processing turns on, move its level, switch Smart Volume's mode, then open Creative App's Acoustic Engine page and confirm it shows the same values; restore the original settings afterwards.
-4. Unplug and reconnect the USB cable; the lighting and microphone panels should disable and re-enable within a second or two.
-5. Close the window and confirm the tray icon remains, its menu reflects mute and lighting state, and Quit exits.
-6. Press Ctrl+Alt+Up, Ctrl+Alt+Down, and Ctrl+Alt+M with the window hidden and confirm the volume display has caught up when it is shown again.
-7. Change volume outside the app and confirm that the UI refreshes.
-8. Switch the Windows default output to a non-Pebble device and confirm the amber warning, then switch back.
-9. Run `npm run dist`.
-10. Launch `dist/win-unpacked/Pebble Control.exe` and repeat the audio, RGB, microphone, and Device panel checks; the microphone bridge and the driver lookup both run PowerShell from the packaged app.
-11. Install with the generated setup executable and verify the Start menu and uninstall entries.
+3. With a Pebble X Plus on USB: switch slots and effects, edit colours, speed, and direction, toggle lighting power, switch between Speakers and Headphones, and change the microphone level and mute. Confirm the Device panel shows firmware 1.27 or newer, the Creative driver version, and that each support link opens in the browser. In the Acoustic Engine panel, enable an effect and confirm Processing turns on, move its level, switch Smart Volume's mode, pick a sound mode and an equalizer preset, drag an equalizer band, then open Creative App's Acoustic Engine page and confirm it shows the same values; restore the original settings afterwards.
+4. Save a profile, change several settings, apply the profile, and confirm everything returns; delete it.
+5. Change a keyboard shortcut by recording a new combination, confirm it works with the window hidden, then reset to defaults.
+6. Enable Start in tray, quit, relaunch, and confirm no window appears until the tray icon is clicked; disable it again.
+7. Unplug and reconnect the USB cable; the lighting and microphone panels should disable and re-enable within a second or two.
+8. Close the window and confirm the tray icon remains, its menu reflects mute and lighting state, and Quit exits.
+9. Press Ctrl+Alt+Up, Ctrl+Alt+Down, and Ctrl+Alt+M with the window hidden and confirm the volume display has caught up when it is shown again.
+10. Change volume outside the app and confirm that the UI refreshes.
+11. Switch the Windows default output to a non-Pebble device and confirm the amber warning, then switch back.
+12. Run `npm run dist`.
+13. Launch `dist/win-unpacked/Pebble Control.exe` and repeat the audio, RGB, microphone, and Device panel checks; the microphone bridge and the driver lookup both run PowerShell from the packaged app.
+14. Install with the generated setup executable and verify the Start menu and uninstall entries.
 
 ## Release Process
 

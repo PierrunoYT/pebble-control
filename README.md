@@ -71,6 +71,12 @@ Build a Windows installer:
 npm run dist
 ```
 
+Regenerate the application, window, and tray icons after changing the design in `scripts/make-icons.js`:
+
+```powershell
+npm run icon
+```
+
 Build output is written to `dist/`. See the [Development Guide](docs/DEVELOPMENT.md) for the architecture, IPC API, and release process.
 
 ## Documentation
