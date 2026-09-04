@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## Unreleased
 
+## 1.0.0 - 2026-09-04
+
 ### Added
 
 - Direct Creative Pebble X Plus RGB power, brightness, effect, and color controls, including the five-stop gradient used by Static, Glowing, Wave, and Peak Meter.
@@ -32,11 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Custom sound modes: save the current effects and equalizer under a name, delete, and reset a mode to its stored settings.
 - Speaker or headphone output switch for the Pebble X Plus over USB.
 - Device-scoped HID transport with response validation and a restricted Electron IPC bridge.
-
-## 1.0.0 - 2026-09-04
-
-### Added
-
+- Automatic persistence and startup restore of the last lighting, output, Acoustic Engine, and equalizer settings.
 - Windows master volume control with live percentage feedback.
 - System mute and unmute control.
 - Late night, everyday, and immersive volume presets.
