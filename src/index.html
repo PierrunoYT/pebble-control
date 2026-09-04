@@ -176,6 +176,22 @@
         </div>
 
         <fieldset class="effects-grid" id="effectsGrid" disabled></fieldset>
+
+        <fieldset class="eq-panel" id="eqPanel" disabled>
+          <div class="eq-head">
+            <label class="launch-setting">
+              <span><strong>Equalizer</strong><small id="eqStatus">Ten bands, stored per output</small></span>
+              <input id="eqEnable" type="checkbox">
+              <span class="toggle" aria-hidden="true"></span>
+            </label>
+            <label class="lighting-field eq-preset">
+              <span>Preset</span>
+              <select id="eqPreset" aria-label="Equalizer preset"></select>
+            </label>
+            <button class="text-button" id="eqFlat" type="button">Reset to flat</button>
+          </div>
+          <div class="eq-bands" id="eqBands" role="group" aria-label="Equalizer bands"></div>
+        </fieldset>
         <p class="device-note">These effects are Creative's audio processing in the Windows driver, so they shape every sound that plays through the Pebble. They are stored per output: Speakers and Headphones keep separate settings.</p>
       </section>
 

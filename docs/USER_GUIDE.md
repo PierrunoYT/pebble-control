@@ -59,6 +59,8 @@ Creative's Acoustic Engine effects run in the Creative audio driver on the PC an
 
 Changes apply immediately and are shared with Creative App, which shows the same values.
 
+The **Equalizer** below the effects has ten bands from 31 Hz to 16 kHz, each from -12 to +12 dB. Pick a preset from the list, drag a band to shape your own curve, or select **Reset to flat**. When Creative App is installed its factory presets appear in the list; otherwise a few generic curves are offered. Like the effects, the equalizer is stored separately for Speakers and Headphones, and turning it on turns Processing on.
+
 ### Microphone
 
 The Pebble X Plus also appears in Windows as a microphone. When it is connected by USB, a **Microphone** panel shows its level, a mute button, the audio quality Windows uses for it, and whether it is the Windows default microphone.

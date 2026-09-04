@@ -4,6 +4,8 @@
 // bridge. Property keys and context GUIDs come from Creative App's own
 // libraries; see docs/DEVELOPMENT.md.
 
+const fs = require('node:fs');
+const path = require('node:path');
 const { bridgeCall } = require('./capture');
 
 // One context per output path. Creative App shows them as its Speakers and
@@ -156,4 +158,158 @@ async function setEffect(id, changes, output = 'speakers') {
   return getState(output);
 }
 
-module.exports = { getState, setEffect, setMaster, EFFECTS, CONTEXTS, MASTER_KEY, parseValue, toPercent, contextFor, keyList };
+// Graphic equalizer: ten bands in dB plus a preamp, in the same store.
+const EQ_BANDS = Object.freeze([31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]);
+const EQ_KEYS = Object.freeze({
+  enable: { guid: '9a9d0cb2-4dc9-494c-8210-9848ae1aa629', pid: 0 },
+  preamp: { guid: 'ddcf8d90-de27-4de4-af57-088b8ad78fdf', pid: 0 },
+  gainGuid: '2b88c76d-d07c-4e97-8922-1bac9f6d5935'
+});
+const EQ_GAIN_RANGE = Object.freeze({ min: -12, max: 12, step: 0.5 });
+
+// Creative App keeps its factory presets as JSON next to its product data.
+// They are read when present so every preset the user knows is available;
+// otherwise a few generic curves are offered.
+const CREATIVE_EQ_PRESET_DIR = path.join(process.env.ProgramData || 'C:\\ProgramData', 'Creative', 'CreativeApp', 'Product', 'MF0495', 'Presets', 'EQ');
+const BUILT_IN_PRESETS = Object.freeze([
+  { id: 'flat', name: 'Flat', gains: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { id: 'bass-boost', name: 'Bass Boost', gains: [3, 5, 3, -1, -1, 0, 0, 0, 0, 0] },
+  { id: 'treble-boost', name: 'Treble Boost', gains: [0, 0, 0, 0, 0, 0, 1, 2, 3, 4] },
+  { id: 'vocal', name: 'Vocal', gains: [-2, -1, 0, 1, 3, 3, 2, 1, 0, -1] }
+]);
+
+let presetCache = null;
+
+function readCreativePreset(file, output) {
+  try {
+    const data = JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, ''));
+    const wanted = output === 'headphones' ? 'Headphone' : 'Speaker';
+    const settings = (data.Settings || []).find((entry) => entry.Type === wanted) || data.Settings?.[0];
+    if (!settings || !Array.isArray(settings.Bands) || settings.Bands.length !== EQ_BANDS.length) return null;
+    return {
+      id: `creative:${path.basename(file, '.json')}`,
+      name: data.DisplayName || data.Name || path.basename(file, '.json'),
+      order: Number(data.Order) || 0,
+      preamp: Number(settings.PreAmp) || 0,
+      gains: settings.Bands.map((band) => Number(band.Value) || 0)
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+function loadPresets(output) {
+  if (presetCache && presetCache.output === output) return presetCache.presets;
+  let presets = [];
+  try {
+    presets = fs.readdirSync(CREATIVE_EQ_PRESET_DIR)
+      .filter((file) => file.endsWith('.json'))
+      .map((file) => readCreativePreset(path.join(CREATIVE_EQ_PRESET_DIR, file), output))
+      .filter(Boolean)
+      .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
+  } catch (error) {
+    presets = [];
+  }
+  if (presets.length === 0) presets = BUILT_IN_PRESETS.map((preset) => ({ ...preset, preamp: 0 }));
+  presetCache = { output, presets };
+  return presets;
+}
+
+function eqKeyList() {
+  const keys = [
+    { name: 'enable', guid: EQ_KEYS.enable.guid, pid: EQ_KEYS.enable.pid },
+    { name: 'preamp', guid: EQ_KEYS.preamp.guid, pid: EQ_KEYS.preamp.pid }
+  ];
+  EQ_BANDS.forEach((_, index) => keys.push({ name: `gain${index}`, guid: EQ_KEYS.gainGuid, pid: index }));
+  return keys;
+}
+
+// Several Creative presets share a curve (Gaming is flat for speakers), so a
+// preset named Flat wins ties and otherwise the first match in list order.
+function matchPreset(gains, presets) {
+  const matches = presets.filter((preset) => preset.gains.every((gain, index) => Math.abs(gain - gains[index]) < 0.01));
+  if (matches.length === 0) return 'custom';
+  const flat = matches.find((preset) => /^flat$/i.test(preset.name));
+  return (flat || matches[0]).id;
+}
+
+async function getEqState(output = 'speakers') {
+  const device = await pebbleRenderDevice();
+  if (!device) return { connected: false };
+  const { values } = await bridgeCall({ op: 'effects-get', id: device.id, context: contextFor(output), keys: eqKeyList() });
+  const gains = EQ_BANDS.map((_, index) => parseValue(values[`gain${index}`]));
+  if (gains.every((gain) => gain === null)) return { connected: false };
+  const presets = loadPresets(output);
+  const resolved = gains.map((gain) => gain ?? 0);
+  return {
+    connected: true,
+    output,
+    enabled: Boolean(parseValue(values.enable)),
+    preamp: parseValue(values.preamp) ?? 0,
+    bands: EQ_BANDS,
+    gains: resolved,
+    range: EQ_GAIN_RANGE,
+    preset: matchPreset(resolved, presets),
+    presets: presets.map(({ id, name }) => ({ id, name }))
+  };
+}
+
+function clampGain(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) throw new RangeError('Gain must be a number');
+  return Math.min(EQ_GAIN_RANGE.max, Math.max(EQ_GAIN_RANGE.min, Math.round(number / EQ_GAIN_RANGE.step) * EQ_GAIN_RANGE.step));
+}
+
+// Applies any of enabled, preamp, gains (ten dB values), or preset (an id
+// from the preset list). Enabling also turns the Acoustic Engine master on.
+async function setEq(changes, output = 'speakers') {
+  const device = await pebbleRenderDevice();
+  if (!device) throw new Error('The Pebble speaker output is not present');
+  const context = contextFor(output);
+  let gains = changes.gains;
+  let preamp = changes.preamp;
+
+  if (changes.preset !== undefined) {
+    const preset = loadPresets(output).find((candidate) => candidate.id === changes.preset);
+    if (!preset) throw new TypeError('Unknown equalizer preset');
+    gains = preset.gains;
+    preamp = preset.preamp;
+  }
+  if (gains !== undefined) {
+    if (!Array.isArray(gains) || gains.length !== EQ_BANDS.length) throw new RangeError(`Gains must have ${EQ_BANDS.length} values`);
+    const clamped = gains.map(clampGain);
+    for (let index = 0; index < clamped.length; index += 1) {
+      await write(device, context, { guid: EQ_KEYS.gainGuid, pid: index }, 'float', clamped[index]);
+    }
+  }
+  if (preamp !== undefined) await write(device, context, EQ_KEYS.preamp, 'float', clampGain(preamp));
+  if (changes.enabled !== undefined) {
+    const enabled = Boolean(changes.enabled);
+    await write(device, context, EQ_KEYS.enable, 'bool', enabled ? 1 : 0);
+    if (enabled) await write(device, context, MASTER_KEY, 'bool', 1);
+  }
+  return getEqState(output);
+}
+
+module.exports = {
+  getState,
+  setEffect,
+  setMaster,
+  getEqState,
+  setEq,
+  EFFECTS,
+  CONTEXTS,
+  MASTER_KEY,
+  EQ_BANDS,
+  EQ_KEYS,
+  EQ_GAIN_RANGE,
+  BUILT_IN_PRESETS,
+  parseValue,
+  toPercent,
+  contextFor,
+  keyList,
+  eqKeyList,
+  matchPreset,
+  clampGain,
+  readCreativePreset
+};

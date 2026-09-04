@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Microphone panel for the Pebble X Plus capture endpoint: level, mute, audio quality, and set as Windows default.
 - Device panel with model, serial, firmware version, USB ID, Creative audio driver version, and support links.
 - Acoustic Engine panel: Surround, Crystalizer, Bass, Smart Volume with modes, and Dialog+, with separate Speakers and Headphones settings, driving Creative's driver effects through the Windows effects property store.
+- Ten-band graphic equalizer with Creative's factory presets when Creative App is installed.
 - Speaker or headphone output switch for the Pebble X Plus over USB.
 - Device-scoped HID transport with response validation and a restricted Electron IPC bridge.
 

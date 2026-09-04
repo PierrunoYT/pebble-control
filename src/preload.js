@@ -22,6 +22,8 @@ contextBridge.exposeInMainWorld('pebble', {
   getEffectsState: (output) => ipcRenderer.invoke('effects:get-state', output),
   setEffect: (id, changes, output) => ipcRenderer.invoke('effects:set', id, changes, output),
   setEffectsMaster: (enabled, output) => ipcRenderer.invoke('effects:set-master', enabled, output),
+  getEqState: (output) => ipcRenderer.invoke('eq:get-state', output),
+  setEq: (changes, output) => ipcRenderer.invoke('eq:set', changes, output),
   getMicState: () => ipcRenderer.invoke('mic:get-state'),
   setMicVolume: (volume) => ipcRenderer.invoke('mic:set-volume', volume),
   setMicMuted: (muted) => ipcRenderer.invoke('mic:set-muted', muted),

@@ -127,6 +127,19 @@ input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; transform: 
 .effect-modes button[aria-pressed="true"] { border-color: rgba(201,245,90,.42); background: var(--acid-soft); color: var(--acid); }
 .effect-modes button:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
 .effect small.effect-description { color: var(--muted); font-size: 9px; line-height: 1.4; }
+.eq-panel { display: grid; gap: 18px; min-width: 0; margin: 14px 0 0; padding: 19px 20px; border: 1px solid var(--line); border-radius: 15px; background: rgba(0,0,0,.12); }
+.eq-panel:disabled { opacity: .48; }
+.eq-head { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+.eq-head .launch-setting { flex: 0 0 auto; }
+.eq-preset { flex: 1 1 220px; max-width: 320px; }
+.eq-head .text-button { margin: 0; }
+.eq-bands { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; }
+.eq-band { display: grid; gap: 6px; justify-items: center; }
+.eq-band input[type="range"] { writing-mode: vertical-lr; direction: rtl; width: 22px; height: 120px; margin: 0; }
+.eq-band input[type="range"]::-webkit-slider-runnable-track { width: 4px; height: 100%; background: linear-gradient(to top, var(--acid) var(--volume, 50%), #3a3b34 var(--volume, 50%)); }
+.eq-band input[type="range"]::-webkit-slider-thumb { margin-left: -6.5px; }
+.eq-band strong { font-size: 10px; min-height: 14px; }
+.eq-band small { color: var(--muted); font-size: 8px; letter-spacing: .06em; }
 .device-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-top: 22px; padding: 19px 20px; border: 1px solid var(--line); border-radius: 15px; background: rgba(0,0,0,.12); }
 .device-facts { display: grid; gap: 12px; margin: 0; }
 .device-facts div { display: flex; justify-content: space-between; gap: 16px; }
@@ -249,6 +262,7 @@ footer { display: flex; justify-content: space-between; padding: 17px 4px 0; col
   .recording-controls { grid-template-columns: 1fr; padding: 17px; }
   .effects-card { padding: 22px 20px; }
   .effects-grid { grid-template-columns: 1fr; }
+  .eq-bands { grid-template-columns: repeat(5, 1fr); row-gap: 16px; }
   .recording-status { text-align: left; }
   .color-control { flex-wrap: wrap; }
   .brightness-field { grid-column: auto; }

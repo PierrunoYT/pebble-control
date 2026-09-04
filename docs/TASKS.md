@@ -39,8 +39,8 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
 - [x] **Acoustic Engine panel**
   Surround, Crystalizer, Bass, Smart Volume, and Dialog+ with per-output settings, written to Creative's APO through Windows' system-effects user store.
 
-- [ ] **Graphic equalizer**
-  The same store holds Creative's ten-band equalizer (`2b88c76d-d07c-4e97-8922-1bac9f6d5935`, 0 to 9, float dB) and enable flag. Creative App ships 70 presets in its product data folder. Add a band editor and preset picker.
+- [x] **Graphic equalizer**
+  Ten-band editor with enable, preamp, Reset to flat, and a preset picker that reads Creative App's factory presets from its product data folder when present.
 
 ## Not Planned
 

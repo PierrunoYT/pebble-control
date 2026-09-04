@@ -730,6 +730,111 @@ async function applyEffect(id, changes) {
   }
 }
 
+// Equalizer: ten bands in dB with Creative's presets, stored per output.
+const eqPanel = document.querySelector('#eqPanel');
+const eqStatus = document.querySelector('#eqStatus');
+const eqEnable = document.querySelector('#eqEnable');
+const eqPreset = document.querySelector('#eqPreset');
+const eqFlat = document.querySelector('#eqFlat');
+const eqBands = document.querySelector('#eqBands');
+
+let eqState = { connected: false, enabled: false, gains: [], bands: [], presets: [], preset: 'custom' };
+let eqTimer;
+let lastEqEdit = 0;
+
+function bandLabel(frequency) {
+  return frequency >= 1000 ? `${frequency / 1000}k` : String(frequency);
+}
+
+function formatGain(gain) {
+  return `${gain > 0 ? '+' : ''}${Number(gain).toFixed(1).replace(/\.0$/, '')} dB`;
+}
+
+function renderEq(nextState) {
+  eqState = { ...eqState, ...nextState };
+  const connected = Boolean(eqState.connected);
+  eqPanel.disabled = !connected;
+  eqPanel.hidden = !connected && !eqState.everSeen;
+  if (!connected) return;
+  eqEnable.checked = eqState.enabled;
+
+  const presetOptions = [...eqState.presets.map((preset) => preset.id), 'custom'];
+  if ([...eqPreset.options].map((option) => option.value).join() !== presetOptions.join()) {
+    eqPreset.replaceChildren(...eqState.presets.map((preset) => {
+      const option = document.createElement('option');
+      option.value = preset.id;
+      option.textContent = preset.name;
+      return option;
+    }), Object.assign(document.createElement('option'), { value: 'custom', textContent: 'Custom' }));
+  }
+  eqPreset.value = eqState.preset;
+
+  const range = eqState.range || { min: -12, max: 12, step: 0.5 };
+  if (eqBands.childElementCount !== eqState.bands.length) {
+    eqBands.replaceChildren(...eqState.bands.map((frequency, index) => {
+      const band = document.createElement('div');
+      band.className = 'eq-band';
+      const value = document.createElement('strong');
+      const slider = document.createElement('input');
+      slider.type = 'range';
+      slider.min = String(range.min);
+      slider.max = String(range.max);
+      slider.step = String(range.step);
+      slider.dataset.index = String(index);
+      slider.setAttribute('aria-label', `${bandLabel(frequency)} Hz gain`);
+      slider.addEventListener('input', () => {
+        const gains = [...eqState.gains];
+        gains[index] = Number(slider.value);
+        lastEqEdit = Date.now();
+        renderEq({ gains, preset: 'custom' });
+        clearTimeout(eqTimer);
+        eqTimer = setTimeout(() => applyEq({ gains }), 150);
+      });
+      const label = document.createElement('small');
+      label.textContent = bandLabel(frequency);
+      band.append(value, slider, label);
+      return band;
+    }));
+  }
+  [...eqBands.querySelectorAll('.eq-band')].forEach((band, index) => {
+    const gain = eqState.gains[index] ?? 0;
+    const slider = band.querySelector('input');
+    slider.value = String(gain);
+    slider.style.setProperty('--volume', `${((gain - range.min) / (range.max - range.min)) * 100}%`);
+    band.querySelector('strong').textContent = formatGain(gain);
+  });
+}
+
+async function syncEq() {
+  try {
+    const nextState = await window.pebble.getEqState(effectsOutput);
+    if (Date.now() - lastEqEdit > 1500) renderEq({ ...nextState, everSeen: eqState.everSeen || nextState.connected });
+    eqStatus.textContent = nextState.connected ? (nextState.enabled ? 'Ten bands, active' : 'Ten bands, bypassed') : 'Unavailable';
+  } catch (error) {
+    console.error('Equalizer sync failed:', error);
+    renderEq({ connected: false });
+    eqStatus.textContent = 'Equalizer unavailable';
+  }
+}
+
+async function applyEq(changes) {
+  lastEqEdit = Date.now();
+  try {
+    renderEq(await window.pebble.setEq(changes, effectsOutput));
+    eqStatus.textContent = eqState.enabled ? 'Ten bands, active' : 'Ten bands, bypassed';
+    if (changes.enabled !== undefined || changes.preset !== undefined) await syncEffects();
+  } catch (error) {
+    eqStatus.textContent = 'Could not change the equalizer';
+    await syncEq();
+  }
+}
+
+eqEnable.addEventListener('change', () => applyEq({ enabled: eqEnable.checked }));
+eqPreset.addEventListener('change', () => {
+  if (eqPreset.value !== 'custom') applyEq({ preset: eqPreset.value });
+});
+eqFlat.addEventListener('click', () => applyEq({ gains: eqState.bands.map(() => 0), preamp: 0 }));
+
 effectsMaster.addEventListener('change', async () => {
   const enabled = effectsMaster.checked;
   renderEffects({ master: enabled });
@@ -747,7 +852,8 @@ effectsTabs.addEventListener('click', async (event) => {
   if (!button || button.dataset.output === effectsOutput) return;
   effectsOutput = button.dataset.output;
   lastEffectEdit = 0;
-  await syncEffects();
+  lastEqEdit = 0;
+  await Promise.all([syncEffects(), syncEq()]);
 });
 
 // Device card: identity from the USB descriptor, the Creative driver version
@@ -814,6 +920,8 @@ async function initialize() {
   window.setInterval(syncMic, 5000);
   syncEffects();
   window.setInterval(syncEffects, 5000);
+  syncEq();
+  window.setInterval(syncEq, 5000);
   syncDeviceInfo();
   window.pebble.onAudioChanged(syncAudio);
   navigator.mediaDevices.addEventListener('devicechange', findDefaultOutput);
@@ -828,6 +936,7 @@ async function initialize() {
     await syncLighting();
     await syncMic();
     await syncEffects();
+    await syncEq();
     await syncDeviceInfo();
   });
 }
