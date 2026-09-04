@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Tray icon with mute, lighting power, and quit; closing the window hides it to the tray.
 - Global shortcuts: Ctrl+Alt+Up and Ctrl+Alt+Down for volume, Ctrl+Alt+M for mute.
 - Amber warning when the Windows default output is not a Creative Pebble.
-- Unit tests for the lighting module against a scripted fake speaker (`npm test`).
+- Unit tests (`npm test`): the lighting module against a scripted fake speaker, plus the microphone, effects, equalizer, sound mode, settings, profile, and shortcut logic.
 - Microphone panel for the Pebble X Plus capture endpoint: level, mute, audio quality, and set as Windows default.
 - Device panel with model, serial, firmware version, USB ID, Creative audio driver version, and support links.
 - Acoustic Engine panel: Surround, Crystalizer, Bass, Smart Volume with modes, and Dialog+, with separate Speakers and Headphones settings, driving Creative's driver effects through the Windows effects property store.

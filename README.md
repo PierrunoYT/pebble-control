@@ -23,7 +23,7 @@ With a Creative Pebble X Plus connected by USB:
 - Speaker or headphone output switch
 - Microphone level, mute, audio quality, set as Windows default, and the CrystalVoice microphone equalizer
 - Device details: firmware, serial, driver version, and Creative support links
-- Acoustic Engine effects: Surround, Crystalizer, Bass, Smart Volume, and Dialog+ for speakers and headphones
+- Acoustic Engine effects: Surround, Crystalizer, Bass with crossover, Smart Volume with Normal, Loud, and Night modes, and Dialog+ for speakers and headphones
 - Ten-band equalizer with presets, Creative's sound modes applied in one step, and your own saved sound modes
 - Instant response to the speaker being plugged in or removed
 
@@ -39,8 +39,8 @@ With a Creative Pebble X Plus connected by USB:
 
 Pebble Control does not replace Creative App; part of it builds on Creative's software.
 
-- The Acoustic Engine effects and the equalizer are processing inside Creative's USB audio driver. Pebble Control only changes their settings, so without that driver those panels stay empty and the sound is unprocessed. The driver comes with Creative App, and the panels also read Creative App's factory equalizer presets from its data folder.
-- Windows audio, RGB lighting, the speaker or headphone switch, the microphone panel, and the device panel talk to Windows and to the speaker directly and work without Creative App.
+- The Acoustic Engine effects and the equalizer are processing inside Creative's USB audio driver. Pebble Control only changes their settings, so without that driver those panels stay empty and the sound is unprocessed. The driver comes with Creative App, and the panels also read Creative App's factory equalizer presets, sound modes, and microphone profiles from its data folder.
+- Windows audio, RGB lighting, the speaker or headphone switch, the microphone panel apart from its equalizer, and the device panel talk to Windows and to the speaker directly and work without Creative App.
 - Firmware updates, driver updates, and the factory reset remain Creative App features.
 
 Both apps write the same settings, so changes made in one show up in the other.

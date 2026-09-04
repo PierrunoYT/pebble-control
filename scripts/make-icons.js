@@ -1,6 +1,7 @@
 // Renders the Pebble Control icon at every size Windows uses and writes:
 //   build/icon.ico        installer and executable icon (16 to 256 px)
-//   build/icon.png        256 px reference and window icon
+//   build/icon.png        256 px reference
+//   src/assets/icon.png   256 px window and taskbar icon
 //   src/assets/tray.png   32 px tray icon
 // Run with `npm run icon`. No image libraries: pixels are computed directly
 // with 4x4 supersampling for smooth edges.

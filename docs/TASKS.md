@@ -1,6 +1,6 @@
 # Tasks
 
-Open work for Pebble Control, grouped by area. Protocol details for the lighting tasks are in the [Development Guide](DEVELOPMENT.md#lighting-protocol-reference).
+Work log for Pebble Control, grouped by area; every item is done unless unchecked. Protocol details for the lighting tasks are in the [Development Guide](DEVELOPMENT.md#lighting-protocol-reference).
 
 ## Lighting
 
@@ -11,16 +11,16 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
   Add a direction selector using customization type 4 with a direction byte and a bounce byte. Wave offers left, right, up, down, and bounce; Chasers offers left, right, and bounce; Peak Meter offers up and down. Hide the bounce option when the capability mask lacks bit 2.
 
 - [x] **Morph second colour**
-  Read and write customization type 2 for Morph so both fade colours can be edited. Show a second well next to the first one only when the effect is Morph.
+  Read and write customization type 2 for Morph so both fade colours can be edited. Show a second well whenever the effect's capability record lists a second colour, which is Morph on this firmware.
 
 - [x] **Capability-driven controls**
   Query operation `0x22` for each supported mode at connect time and show or hide the colour, speed, and direction controls from the reply instead of hardcoding per effect.
 
 - [x] **Slot switching**
-  Expose the five lighting slots. Read each slot's effect with operation `0x2a`, switch with `0x2d`, and remember that customization only works on the active slot. Present slots as quick-pick presets alongside the existing volume presets.
+  Expose the selectable lighting slots 1 to 4 as a row in the lighting panel. Read each slot's effect with operation `0x2a`, switch with `0x2d`, and remember that customization only works on the active slot.
 
 - [x] **Hot-plug handling**
-  React to USB attach and detach events instead of relying on the 5-second poll, so the lighting panel enables and disables immediately.
+  Poll HID presence every second in the main process and push a presence event, so the panels disable and re-enable within about a second instead of waiting for the 5-second state poll.
 
 ## Audio over USB
 
@@ -40,7 +40,7 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
   Surround, Crystalizer, Bass, Smart Volume, and Dialog+ with per-output settings, written to Creative's APO through Windows' system-effects user store.
 
 - [x] **Graphic equalizer**
-  Ten-band editor with enable, preamp, Reset to flat, and a preset picker that reads Creative App's factory presets from its product data folder when present.
+  Ten-band editor with enable, Reset to flat, and a preset picker whose presets carry the preamp, that reads Creative App's factory presets from its product data folder when present.
 
 - [x] **Sound modes and bass crossover**
   Sound mode picker reading Creative App's SoundMode files and applying effects, equalizer preset, and master together; crossover frequency slider on the Bass effect.
@@ -68,7 +68,7 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
 ## App
 
 - [x] **Tray icon**
-  Minimise to the system tray with volume, mute, and lighting power in the tray menu.
+  Hide to the system tray on close, with Show, Mute, Lighting power, and Quit in the tray menu.
 
 - [x] **Keyboard shortcuts**
   Global shortcuts for volume up, volume down, and mute.

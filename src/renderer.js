@@ -1285,7 +1285,13 @@ async function initialize() {
     if (!connected) {
       renderLighting({ connected: false });
       renderDeviceInfo({ connected: false });
+      renderMic({ connected: false });
+      renderMicEq({ connected: false });
+      renderEffects({ connected: false });
+      renderEq({ connected: false });
       lightingStatus.textContent = 'Speaker disconnected';
+      micStatus.textContent = 'Connect the speaker by USB';
+      effectsStatus.textContent = 'Connect the speaker by USB';
       return;
     }
     lightingStatus.textContent = 'Speaker connected';

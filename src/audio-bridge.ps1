@@ -1,9 +1,12 @@
 # Pebble Control audio bridge.
 #
 # Runs as a long-lived child of the main process and answers one JSON command
-# per line on stdin with one JSON line on stdout. It reaches the Windows Core
-# Audio capture endpoints (microphone level, mute, default device, and the
-# shared-mode format) through COM, which the loudness package does not cover.
+# per line on stdin with one JSON line on stdout. It reaches Windows Core Audio
+# through COM for what the loudness package does not cover: capture endpoint
+# level, mute, default device, and shared-mode format, render endpoint listing,
+# and the per-endpoint system effects store that Creative's driver reads.
+# Operations: list, list-render, state, set-volume, set-mute, set-default,
+# formats, set-format, effects-get, effects-set, ping.
 
 $ErrorActionPreference = 'Stop'
 

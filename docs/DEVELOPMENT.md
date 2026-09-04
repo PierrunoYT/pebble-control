@@ -6,7 +6,7 @@
 - Plain HTML, CSS, and JavaScript for the renderer
 - [`loudness`](https://www.npmjs.com/package/loudness) for Windows master volume access
 - [`node-hid`](https://www.npmjs.com/package/node-hid) for Pebble X Plus USB lighting and output control
-- Windows PowerShell 5.1, bundled with Windows, for the Core Audio bridge behind the microphone and Acoustic Engine panels
+- Windows PowerShell 5.1, bundled with Windows, for the Core Audio bridge behind the microphone, Acoustic Engine, and equalizer panels, and for the driver version lookup in the Device panel
 - Node's built-in test runner for the unit tests
 - `electron-builder` for the NSIS installer
 
@@ -28,11 +28,12 @@ Pebble Control/
 |   |-- preload.js    Restricted renderer bridge
 |   |-- index.html    Application markup
 |   |-- styles.css    Responsive visual design
-|   `-- renderer.js   UI state and interactions
-|   `-- assets/       Window, taskbar, and tray icons
-|-- build/            Installer icon consumed by electron-builder
+|   |-- renderer.js   UI state and interactions
+|   `-- assets/       icon.png for the window and taskbar, tray.png for the tray
+|-- build/            icon.ico and icon.png consumed by electron-builder
 |-- scripts/          make-icons.js icon generator
-|-- test/             Unit tests and the scripted fake speaker
+|-- test/             fake-hid.js scripted speaker and one *.test.js per module
+|-- dist/             Build output, ignored by git
 |-- docs/
 |   |-- USER_GUIDE.md
 |   |-- DEVELOPMENT.md
@@ -71,7 +72,7 @@ The application is Windows-focused. The renderer can load on other platforms, bu
 
 ### Audio Bridge
 
-Microphone control needs Windows Core Audio interfaces that the `loudness` package does not expose. `src/capture.js` starts `src/audio-bridge.ps1` as a long-lived PowerShell child and exchanges one JSON line per request. The script defines the COM interfaces in C# through `Add-Type` (`IMMDeviceEnumerator`, `IAudioEndpointVolume`, `IAudioClient`, and the undocumented `IPolicyConfig` used for the default device and the shared-mode format) with `[PreserveSig]` so HRESULTs are returned rather than thrown. Because PowerShell cannot open a script inside `app.asar`, the script is copied to the temp directory on first use. The first call takes about 300 ms while the types compile; later calls take a few milliseconds. Accepted formats are probed once per endpoint with `IsFormatSupported` in exclusive mode and cached.
+Microphone control needs Windows Core Audio interfaces that the `loudness` package does not expose. `src/capture.js` starts `src/audio-bridge.ps1` as a long-lived PowerShell child and exchanges one JSON line per request. The script defines the COM interfaces in C# through `Add-Type` (`IMMDeviceEnumerator`, `IAudioEndpointVolume`, `IAudioClient`, and the undocumented `IPolicyConfig` used for the default device and the shared-mode format) with `[PreserveSig]` so HRESULTs are returned rather than thrown. Because PowerShell cannot open a script inside `app.asar`, the script is written to the temp directory each time the bridge starts. The bridge answers these operations: `list` and `list-render` for capture and render endpoints; `state`, `set-volume`, `set-mute`, `set-default`, `formats`, and `set-format` for a capture endpoint; `effects-get` and `effects-set` for the system effects store; and `ping`. The first call takes about 300 ms while the types compile; later calls take a few milliseconds. Accepted formats are probed once per endpoint with `IsFormatSupported` in exclusive mode and cached.
 
 ### Acoustic Engine
 
@@ -90,7 +91,7 @@ Creative App configures its driver effects through Windows' `IAudioSystemEffects
 
 The graphic equalizer lives in the same store: enable `9a9d0cb2-4dc9-494c-8210-9848ae1aa629`, 0 (bool), preamp `ddcf8d90-de27-4de4-af57-088b8ad78fdf`, 0 (float dB), and gains `2b88c76d-d07c-4e97-8922-1bac9f6d5935`, 0 to 9 (float dB) for 31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, and 16000 Hz. Creative App's factory presets are JSON files under `%ProgramData%\Creative\CreativeApp\Product\MF0495\Presets\EQ`, each with Speaker and Headphone band lists; `src/effects.js` reads them when present and falls back to built-in curves. The bass crossover frequency is `3f23dbc5-12d1-4d62-89ed-bc458337e0fc` with ID 0 for external speakers and 2 for headphones, in Hz. Creative's sound modes are JSON files under `...\Product\MF0495\SoundMode`, each with Speaker and Headphone sections holding every effect's enable, level, and mode plus an equalizer preset reference by `Id`; `applySoundMode` writes them all and turns the master on, and `getState` reports which mode the live settings match. Custom sound modes are stored in `custom-sound-modes.json` in the user data folder with their gains inline and are listed before Creative's.
 
-The microphone endpoint has the same kind of store. Creative's CrystalVoice page for the Pebble X Plus is only a microphone equalizer, which uses the equalizer enable, preamp, and gain keys above on the capture endpoint with the speakers context GUID. Its profiles are the JSON files under `...\Product\MF0495\MicEqProfile`, each with one "Common" band list; the store's live gains matched the Communication profile that Creative App displayed. Noise reduction, echo cancellation, and microphone smart volume keys exist in Creative's key list but are absent from this endpoint's store and its CrystalVoice page, so they are not exposed.
+The microphone endpoint has the same kind of store. Creative's CrystalVoice page for the Pebble X Plus is only a microphone equalizer, which uses the equalizer enable, preamp, and gain keys above on the capture endpoint with the speakers context GUID. Its profiles are the JSON files under `...\Product\MF0495\MicEqProfile`, each with one "Common" band list, with a single Flat profile offered when the folder is absent; the store's live gains matched the Communication profile that Creative App displayed. Noise reduction, echo cancellation, and microphone smart volume keys exist in Creative's key list but are absent from this endpoint's store and its CrystalVoice page, so they are not exposed.
 
 ### Lighting Protocol Reference
 
@@ -175,11 +176,11 @@ The window uses `contextIsolation`, disables renderer Node.js integration, and r
 | `setSettings(changes)` | settings object | Merge and persist known settings; unknown keys are ignored |
 | `getLaunchAtLogin()` | `boolean` | Read the startup preference |
 | `setLaunchAtLogin(enabled)` | `boolean` | Update and return the startup preference |
-| `getLightingState()` | lighting state object | Read Pebble X Plus connection, power, brightness, mode, the active effect's colors, speed, and direction, the per-mode capability records, and the current and supported output targets |
+| `getLightingState()` | lighting state object | Read Pebble X Plus connection, power, brightness, the active slot and the effect stored in slots 1 to 4, the supported modes with names, the active effect's colors, second colors, speed, and direction, the speed presets, the per-mode capability records, and the current and supported output targets |
 | `setLightingEnabled(enabled)` | `boolean` | Enable or disable the RGB LEDs |
 | `setLightingBrightness(value)` | `number` | Set hardware brightness from 0 to 255 |
-| `setLightingMode(mode)` | `{ mode, colors, color, speed, direction, directionSupport }` | Select a validated, device-supported effect and return its color list, speed, and direction |
-| `setLightingColor(color)` | `{ color, colors, mode }` | Switch to Static and fill every gradient stop with one `#RRGGBB` color |
+| `setLightingMode(mode)` | `{ mode, colors, colors2, color, speed, direction, directionSupport }` | Select a validated, device-supported effect and return its color list, speed, and direction |
+| `setLightingColor(color)` | `{ color, colors, mode }` | Switch to Static and fill every gradient stop with one `#RRGGBB` color; kept for scripting, the UI uses `setLightingColors` |
 | `setLightingColors(colors)` | `{ colors, mode }` | Replace the active effect's color list; the length must match what the effect holds |
 | `setLightingColors2(colors)` | `{ colors2, mode }` | Replace Morph's second color list (customization type 2) |
 | `setLightingSpeed(speed)` | `{ speed, mode }` | Set the active effect's speed to one of the seven firmware presets in milliseconds |
@@ -188,16 +189,16 @@ The window uses `contextIsolation`, disables renderer Node.js integration, and r
 | `setOutputTarget(target)` | `{ outputTarget, outputTargets }` | Route audio to the speakers (`2`) or the headphone jack (`4`) |
 | `getDeviceInfo()` | device info object | Model, serial, firmware (from the USB release number), firmware build word, Creative audio driver version, and support links |
 | `openLink(url)` | - | Open one of the fixed Creative support links in the browser; any other URL is refused |
-| `getEffectsState(output)` | effects state object | Read the Acoustic Engine master switch and each effect's enabled flag, level (0 to 100), and mode for `speakers` or `headphones` |
-| `setEffect(id, changes, output)` | effects state object | Apply `enabled`, `level`, or `mode` to one effect; enabling also turns the master on |
+| `getEffectsState(output)` | effects state object | Read the Acoustic Engine master switch, each effect's enabled flag, level (0 to 100), mode, and Bass's crossover with its range, the sound mode list (Creative and custom), and which mode the live settings match, for `speakers` or `headphones` |
+| `setEffect(id, changes, output)` | effects state object | Apply `enabled`, `level`, `mode`, or `crossover` to one effect; enabling also turns the master on |
 | `setEffectsMaster(enabled, output)` | effects state object | Turn Acoustic Engine processing on or off |
-| `applySoundMode(id, output)` | `{ effects, eq }` | Apply one of Creative's sound modes: every effect, the equalizer preset, and the master |
+| `applySoundMode(id, output)` | `{ effects, eq }` | Apply a Creative or custom sound mode: every effect, the equalizer, and the master |
 | `saveSoundMode(name, output)` | `{ effects, eq }` | Save the live effects and equalizer as a custom sound mode for that output |
 | `deleteSoundMode(id, output)` | `{ effects, eq }` | Remove a custom sound mode |
 | `resetSoundMode(id, output)` | `{ effects, eq }` | Re-apply a mode's stored settings |
 | `getMicEqState()` | mic equalizer state | Enabled flag, matching profile, profile list, and gains for the microphone endpoint |
 | `setMicEq(changes)` | mic equalizer state | Apply `enabled` or a `profile` id to the microphone equalizer |
-| `getEqState(output)` | equalizer state object | Read the equalizer's enabled flag, preamp, ten band gains in dB, the matching preset, and the preset list |
+| `getEqState(output)` | equalizer state object | Read the equalizer's enabled flag, preamp, band frequencies, ten band gains in dB, the gain range and step, the matching preset, and the preset list |
 | `setEq(changes, output)` | equalizer state object | Apply `enabled`, `preamp`, `gains` (ten dB values), or `preset` (an id from the list) |
 | `getMicState()` | microphone state object | Read the Pebble capture endpoint's name, level, mute, default status, current format, and accepted formats |
 | `setMicVolume(volume)` | `number` | Set the capture level from 0 to 100 |
@@ -211,7 +212,7 @@ The window uses `contextIsolation`, disables renderer Node.js integration, and r
 
 The lighting panel is capability driven: the effect list is built from the modes the speaker reports, and the colour, speed, and direction controls follow the capability record of the active effect rather than a hardcoded table. Capability records are read once per connection and cached in `src/lighting.js`.
 
-`src/renderer.js` maintains the displayed volume and mute state. It polls the operating system every 2.5 seconds so external volume changes are reflected in the interface. Slider writes are briefly debounced to avoid launching excessive system volume operations.
+`src/renderer.js` maintains the displayed volume and mute state. It polls the operating system every 2.5 seconds so external volume changes are reflected in the interface, and polls the lighting, microphone, microphone equalizer, Acoustic Engine, and equalizer state every 5 seconds; the presence event from the main process refreshes or clears all of them at once on attach and detach. Slider writes are briefly debounced to avoid launching excessive system volume operations.
 
 The renderer uses `navigator.mediaDevices.enumerateDevices()` only to display an output label and to warn when that label does not name a Pebble. It re-checks on the `devicechange` event. Audio control does not depend on device enumeration.
 
@@ -220,7 +221,7 @@ The renderer uses `navigator.mediaDevices.enumerateDevices()` only to display an
 | Command | Description |
 | --- | --- |
 | `npm start` | Run the app in Electron |
-| `npm run check` | Check JavaScript syntax |
+| `npm run check` | Syntax-check every JavaScript file in `src/` |
 | `npm test` | Run the unit tests with Node's test runner |
 | `npm run icon` | Regenerate the installer, window, and tray icons |
 | `npm run dist` | Build the x64 Windows NSIS installer |
@@ -229,13 +230,13 @@ The renderer uses `navigator.mediaDevices.enumerateDevices()` only to display an
 
 Before a release:
 
-1. Run `npm run check` and `npm test`. The tests in `test/` run the lighting module against a scripted fake speaker (`test/fake-hid.js`) and cover report framing, colour decoding, rejection handling, capability parsing, slots, and the output target, plus the microphone device selection and format labels, so protocol changes can be checked without hardware.
+1. Run `npm run check` and `npm test`. The tests in `test/` run the lighting module against a scripted fake speaker (`test/fake-hid.js`) covering report framing, colour decoding, rejection handling, capability parsing, slots, and the output target, and cover the microphone device selection and formats, effects parsing and scaling, equalizer presets and clamping, sound mode files and matching, microphone profiles and custom modes, settings, profiles, and accelerator strings, so most logic can be checked without hardware.
 2. Run `npm start` and test volume, mute, every preset, and launch at startup.
 3. With a Pebble X Plus on USB: switch slots and effects, edit colours, speed, and direction, toggle lighting power, switch between Speakers and Headphones, and change the microphone level and mute. Confirm the Device panel shows firmware 1.27 or newer, the Creative driver version, and that each support link opens in the browser. In the Acoustic Engine panel, enable an effect and confirm Processing turns on, move its level, switch Smart Volume's mode, pick a sound mode and an equalizer preset, drag an equalizer band, then open Creative App's Acoustic Engine page and confirm it shows the same values; restore the original settings afterwards.
 4. Save a profile, change several settings, apply the profile, and confirm everything returns; delete it.
 5. Change a keyboard shortcut by recording a new combination, confirm it works with the window hidden, then reset to defaults.
 6. Enable Start in tray, quit, relaunch, and confirm no window appears until the tray icon is clicked; disable it again.
-7. Unplug and reconnect the USB cable; the lighting and microphone panels should disable and re-enable within a second or two.
+7. Unplug and reconnect the USB cable; the lighting, microphone, Acoustic Engine, and equalizer panels should disable within about a second and re-enable within a second or two of reconnecting.
 8. Close the window and confirm the tray icon remains, its menu reflects mute and lighting state, and Quit exits.
 9. Press Ctrl+Alt+Up, Ctrl+Alt+Down, and Ctrl+Alt+M with the window hidden and confirm the volume display has caught up when it is shown again.
 10. Change volume outside the app and confirm that the UI refreshes.

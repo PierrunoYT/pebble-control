@@ -4,7 +4,7 @@
 
 Pebble Control provides a compact control surface for the current Windows default audio output. When a Creative Pebble is selected as that output, changes made in the app affect sound played through the speakers.
 
-The app controls Windows audio on all Pebble models. When a Creative Pebble X Plus is connected by USB, it can also control the speaker's RGB lighting, switch between the speakers and the headphone jack, and manage the speaker's microphone. The physical volume knob, speaker power, hardware gain mode, and equalizer settings remain outside the app's control.
+The app controls Windows audio on all Pebble models. When a Creative Pebble X Plus is connected by USB, it can also control the speaker's RGB lighting, switch between the speakers and the headphone jack, manage the speaker's microphone, and, with Creative App installed, drive Creative's Acoustic Engine effects and equalizer; profiles save all of that together. The physical volume knob, speaker power, and the speaker's hardware gain mode remain outside the app's control.
 
 Pebble Control keeps running in the notification area when its window is closed, and offers global keyboard shortcuts for volume and mute.
 
@@ -26,6 +26,8 @@ Windows may show a reputation warning for an unsigned build. Review the publishe
 The selected endpoint appears at the top of the app. If Windows does not provide its name, the app displays **Windows default output**. For a Pebble X Plus, use the USB connection: it carries audio, the microphone, and the lighting and output controls, while Bluetooth and the 3.5 mm input only carry audio.
 
 ## Controls
+
+The footer shows the Windows audio status, such as "Synced with Windows audio" or "Output muted", and reports profile and shortcut actions; the dot in the top pill turns red when Windows audio is unavailable.
 
 ### Volume
 
@@ -51,30 +53,30 @@ Presets do not apply equalization or change the sound profile.
 
 ### Acoustic Engine
 
-Creative's Acoustic Engine effects run in the Creative audio driver on the PC and shape everything that plays through the Pebble X Plus. The **Acoustic Engine** panel controls the same settings as Creative App's Acoustic Engine page. This panel needs Creative App installed, because the driver that does the processing ships with it; without it the panel stays empty.
+Creative's Acoustic Engine effects run in the Creative audio driver on the PC and shape everything that plays through the Pebble X Plus. The **Acoustic Engine** panel controls the same settings as Creative App's Acoustic Engine page. This panel needs Creative App installed, because the driver that does the processing ships with it; without it the panel does not appear.
 
 - **Processing** at the top turns all effects on or off at once. Turning on any effect turns processing on.
 - **Speakers** and **Headphones** hold separate settings; pick the one that matches how you listen.
-- Each effect has its own switch and level. **Surround** widens the sound stage, **Crystalizer** restores detail lost to compression, **Bass** fills in low frequencies and has a crossover frequency that sets where the boost starts, **Smart Volume** evens out loudness jumps and offers Normal, Loud, and Night modes, and **Dialog+** lifts voices.
-- **Sound mode** applies one of Creative's bundles of effect and equalizer settings in one step, such as Music, Movies, Gaming, or a preset for a particular game. The list shows which mode the current settings match, or Custom once you change anything. **Save as...** stores the current effects and equalizer as your own sound mode for this output, listed under "Your sound modes"; **Delete** removes one of yours. After tweaking a mode, **Reset** returns to its stored settings.
+- Each effect has its own switch and level. **Surround** widens the sound stage, **Crystalizer** restores detail lost to compression, **Bass** fills in low frequencies and has a crossover frequency from 40 to 200 Hz that sets where the boost starts, **Smart Volume** evens out loudness jumps and offers Normal, Loud, and Night modes, and **Dialog+** lifts voices.
+- **Sound mode** applies one of Creative's bundles of effect and equalizer settings in one step, such as Music, Movies, Gaming, or a preset for a particular game. The list shows which mode the current settings match, or Custom once you change anything. **Save as...** stores the current effects and equalizer as your own sound mode for this output, listed under "Your sound modes"; **Delete** appears while one of yours is selected and removes it. Once you tweak a mode the picker shows Custom and **Reset** appears, returning to the mode last shown. The whole sound mode row is only offered when Creative App's sound mode files are installed.
 
 Changes apply immediately and are shared with Creative App, which shows the same values.
 
-The **Equalizer** below the effects has ten bands from 31 Hz to 16 kHz, each from -12 to +12 dB. Pick a preset from the list, drag a band to shape your own curve, or select **Reset to flat**. When Creative App is installed its factory presets appear in the list; otherwise a few generic curves are offered. Like the effects, the equalizer is stored separately for Speakers and Headphones, and turning it on turns Processing on.
+The **Equalizer** below the effects has ten bands from 31 Hz to 16 kHz, each from -12 to +12 dB in half-decibel steps. Pick a preset from the list, drag a band to shape your own curve, or select **Reset to flat**. When Creative App is installed its factory presets appear in the list; otherwise a few generic curves are offered. Like the effects, the equalizer is stored separately for Speakers and Headphones, and turning it on turns Processing on.
 
 ### Profiles
 
-The **Profiles** panel saves everything the app controls under a name: the active lighting slot with its effect, colors, speed, direction, brightness, and power; the speaker or headphone output; and the Acoustic Engine effects and equalizer for both outputs. Type a name and select **Save current**; saving with an existing name replaces that profile. Select a profile to apply it, or its × to delete it.
+The **Profiles** panel saves the speaker-side settings under a name: the active lighting slot with its effect, colors, speed, direction, brightness, and power; the speaker or headphone output; and the Acoustic Engine effects and equalizer for both outputs. Type a name and select **Save current**; saving with an existing name replaces that profile. Select a profile to apply it, or its × to delete it.
 
-Applying a profile skips any part whose hardware is not present, and the status line says what was skipped. Windows volume is not part of a profile; use the listening presets for that.
+Applying a profile skips any part whose hardware is not present, and the status line says what was skipped. Windows volume and mute, the microphone level, format, and equalizer, and the keyboard shortcuts are not part of a profile; use the listening presets for volume. Saving with an existing name replaces that profile, names are up to 40 characters, and up to 24 profiles can be kept.
 
 ### Microphone
 
 The Pebble X Plus also appears in Windows as a microphone. When it is connected by USB, a **Microphone** panel shows its level, a mute button, the audio quality Windows uses for it, and whether it is the Windows default microphone.
 
 - Drag **Level** or use the mute button to change how loud the microphone records.
-- **Audio quality** lists the formats the microphone accepts. The Pebble X Plus reports one, 16 bit at 48000 Hz mono, so the list is fixed on that model.
-- Select **Set as default microphone** to make Windows use it for recording and calls.
+- **Audio quality** lists the formats the microphone accepts. The Pebble X Plus reports one, 16 bit at 48000 Hz mono, so the control is dimmed on that model.
+- Select **Set as default microphone** to make Windows use it for recording and calls. The link only appears while another device is the default; the hint beside it says which it is.
 - **Microphone equalizer** is Creative's CrystalVoice for this speaker: a switch and a profile such as Communication, Broadcast, or Voice Clarity that shapes your voice before apps hear it. It needs Creative App installed, like the Acoustic Engine.
 
 ### Device
@@ -85,7 +87,7 @@ Firmware updates, driver updates, and the factory reset are not offered. They de
 
 ### Speaker Output
 
-When a Creative Pebble X Plus is connected by USB, a **Speaker output** switch appears in the bottom bar. Choose **Speakers** to play through the satellites or **Headphones** to route audio to the headphone jack on the right speaker. The switch is hidden for other connections.
+When a Creative Pebble X Plus is connected by USB, a **Speaker output** switch appears in the bottom bar. Choose **Speakers** to play through the satellites or **Headphones** to route audio to the headphone jack on the right speaker. The switch is hidden for other connections, and the confirmation appears in the Ambient lighting panel's status line.
 
 ### Keyboard Shortcuts
 
@@ -101,7 +103,7 @@ These are the defaults. The **Keyboard shortcuts** panel near the bottom shows e
 
 ### Tray Icon
 
-Pebble Control keeps a green pebble icon in the notification area. Closing the window hides it there instead of quitting. Click the icon to bring the window back, or right-click it for a menu with Mute or Unmute, Lighting on or off, and Quit. Quit is the only way to exit the app.
+Pebble Control keeps a green pebble icon in the notification area. Closing the window hides it there instead of quitting. Click the icon to bring the window back, or right-click it for a menu with Show Pebble Control, Mute or Unmute, Lighting on or off, and Quit. Mute and Lighting are greyed out while Windows audio or the speaker is unavailable. Quit is the only way to exit the app.
 
 Enable **Start in tray** in the bottom bar to open hidden on every launch, so the app is ready in the notification area without a window appearing. Combine it with **Launch at startup** for a silent start when you sign in.
 
@@ -114,7 +116,7 @@ Enable **Launch at startup** to open Pebble Control when you sign in to Windows.
 Connect the Creative Pebble X Plus directly by USB. The Ambient lighting panel becomes available within about a second of the speaker appearing, and disables itself as soon as the speaker is unplugged.
 
 - Use **Lighting** to turn the RGB LEDs on or off.
-- Pick one of the four **slots**. Each slot stores its own effect, colors, speed, and direction, and the speaker shows whichever slot is active. All controls below edit the active slot.
+- Pick one of the four **slots**. Each slot stores its own effect, colors, speed, and direction, and the speaker shows whichever slot is active. All controls below edit the active slot. The status line beside the Lighting switch confirms each change, such as "Wave effect applied" or "Slot 3 active".
 - Select Chasers, Aurora, Peak Meter, Glowing, Wave, Cycle, Static, or Morph from **Effect**.
 - Choose a **Speed** from Slowest to Fastest for Cycle, Wave, Morph, Aurora, Glowing, and Chasers. The control is dimmed for Static and Peak Meter, which have no speed.
 - Choose a **Direction** for Wave, Chasers, and Peak Meter. The options follow what the effect supports: left or right, top or bottom, and Bounce, which runs back and forth. The control is dimmed for other effects.
@@ -154,15 +156,15 @@ Check **Settings > Apps > Startup** and ensure Pebble Control is enabled. Corpor
 
 ### The Output Pill Is Amber
 
-The pill in the top bar shows the Windows default output. It turns amber, and the bottom bar reads "Not a Pebble", when that output is not a Creative Pebble device. Volume changes still apply to whatever Windows is using. Pick the Pebble in Windows sound settings to route audio to the speakers; the pill updates as soon as the default output changes.
+The pill in the top bar shows the Windows default output. It turns amber, and the bottom bar's label reads "Active output · Not a Pebble", when that output is not a Creative Pebble device. Volume changes still apply to whatever Windows is using. Pick the Pebble in Windows sound settings to route audio to the speakers; the pill updates as soon as the default output changes.
 
 ### The Microphone Panel Is Missing or Unavailable
 
-The panel appears only when Windows lists the Pebble X Plus microphone, which needs the USB connection. If the panel shows "Microphone control unavailable", Windows PowerShell could not start or was blocked by policy; Pebble Control uses it to reach the Windows audio system for microphone settings. Check that `powershell.exe` runs from a command prompt.
+The panel first appears when Windows lists the Pebble X Plus microphone, which needs the USB connection, and stays visible but disabled after the speaker is unplugged. If it shows "Microphone control unavailable", Windows PowerShell could not start or was blocked by policy; Pebble Control uses it to reach the Windows audio system for the microphone, the Acoustic Engine and equalizer panels, and the driver version. Check that `powershell.exe` runs from a command prompt.
 
 ### A Keyboard Shortcut Does Nothing
 
-Another app already holds that combination. Windows gives a global shortcut to the first app that registers it. Close or reconfigure the other app, then restart Pebble Control.
+Another app already holds that combination. Windows gives a global shortcut to the first app that registers it. Record a different combination in the Keyboard shortcuts panel, or close the other app and select Reset to defaults.
 
 ### Lighting Controls Are Unavailable
 
