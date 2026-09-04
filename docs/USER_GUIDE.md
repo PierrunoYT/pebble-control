@@ -8,7 +8,7 @@ The app controls Windows audio on all Pebble models. When a Creative Pebble X Pl
 
 ## Installation
 
-1. Open `Pebble Control Setup 1.0.0.exe`.
+1. Open the `Pebble Control Setup` installer, either from a GitHub release or built with `npm run dist`.
 2. Choose an installation directory when prompted.
 3. Complete the installation and launch Pebble Control from the Start menu.
 

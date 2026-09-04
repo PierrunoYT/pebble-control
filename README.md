@@ -9,12 +9,18 @@ A lightweight Windows desktop companion for Creative Pebble speakers. Pebble Con
 - Master volume and mute control
 - Late night, everyday, and immersive volume presets
 - Active Windows audio output label with a warning when it is not a Pebble
-- Optional launch at login
-- Tray icon with mute and lighting shortcuts; closing the window keeps it running
 - Global keyboard shortcuts for volume and mute
-- Pebble X Plus RGB power, brightness, effect, speed, direction, and gradient color control over USB
-- Pebble X Plus speaker or headphone output switch over USB
+- Tray icon with mute, lighting power, and quit; closing the window keeps the app running
+- Optional launch at login
 - Responsive desktop interface
+
+With a Creative Pebble X Plus connected by USB:
+
+- RGB power, brightness, and effect selection
+- Five-stop gradient colors, Morph's two fade colors, effect speed, and direction
+- The speaker's four stored lighting slots
+- Speaker or headphone output switch
+- Instant response to the speaker being plugged in or removed
 
 ## Requirements
 
@@ -25,7 +31,7 @@ A lightweight Windows desktop companion for Creative Pebble speakers. Pebble Con
 
 ## Install
 
-Run `dist/Pebble Control Setup 1.0.0.exe`, then open Pebble Control from the Start menu.
+Build the installer from source (see Development below), then run `dist/Pebble Control Setup <version>.exe` and open Pebble Control from the Start menu. Prebuilt installers will be attached to [GitHub releases](https://github.com/PierrunoYT/pebble-control/releases) once the first release is published.
 
 For usage instructions and troubleshooting, see the [User Guide](docs/USER_GUIDE.md).
 
@@ -54,9 +60,12 @@ Build output is written to `dist/`. See the [Development Guide](docs/DEVELOPMENT
 ## Documentation
 
 - [User Guide](docs/USER_GUIDE.md)
-- [Development Guide](docs/DEVELOPMENT.md)
+- [Development Guide](docs/DEVELOPMENT.md), including the reverse-engineered lighting protocol reference
+- [Tasks](docs/TASKS.md)
 - [Changelog](CHANGELOG.md)
 
 ## Limitations
 
-Windows audio controls work with any output routed to Creative Pebble speakers. Direct RGB control is limited to the Creative Pebble X Plus with USB VID/PID `041E:329A`; other Pebble models are not sent hardware commands. Hardware EQ, speaker power, gain mode, and the physical volume knob remain outside the app's control.
+Windows audio controls work with any output routed to Creative Pebble speakers. Direct hardware control is limited to the Creative Pebble X Plus with USB VID/PID `041E:329A`; other Pebble models are not sent hardware commands.
+
+The Pebble X Plus does not accept volume, mute, EQ, or subwoofer commands over USB, so those stay with Windows. Creative App's Acoustic Engine, equalizer, and sound modes are processing in Creative's audio driver rather than speaker features, and are not replicated here. Both speakers always show the same lighting; the hardware has no per-speaker colors. Speaker power, gain mode, and the physical volume knob remain outside the app's control.
