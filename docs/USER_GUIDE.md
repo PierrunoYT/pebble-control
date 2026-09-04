@@ -70,6 +70,8 @@ The **Profiles** panel saves the speaker-side settings under a name: the active 
 
 Applying a profile skips any part whose hardware is not present, and the status line says what was skipped. Windows volume and mute, the microphone level, format, and equalizer, and the keyboard shortcuts are not part of a profile; use the listening presets for volume. Saving with an existing name replaces that profile, names are up to 40 characters, and up to 24 profiles can be kept.
 
+Pebble Control also saves the latest speaker-side setup automatically and restores it at launch. Source and installed builds both keep it in `%APPDATA%\Pebble Control\last-settings.json`, alongside `settings.json` and `profiles.json`.
+
 ### Microphone
 
 The Pebble X Plus also appears in Windows as a microphone. When it is connected by USB, a **Microphone** panel shows its level, a mute button, the audio quality Windows uses for it, and whether it is the Windows default microphone.

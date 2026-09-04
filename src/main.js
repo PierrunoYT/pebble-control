@@ -7,13 +7,24 @@ const deviceInfo = require('./device-info');
 const effects = require('./effects');
 const settings = require('./settings');
 const { createStore } = require('./profiles');
+const { createStore: createLastSettingsStore } = require('./last-settings');
 const { captureSnapshot, applySnapshot } = require('./snapshot');
 
 let profiles = null;
+let lastSettings = null;
 
 let mainWindow;
 let tray;
 let quitting = false;
+let quitReady = false;
+let quitFlush = null;
+
+function remember(result) {
+  return Promise.resolve(result).then((value) => {
+    if (lastSettings) lastSettings.schedule();
+    return value;
+  });
+}
 
 function showWindow() {
   if (!mainWindow) {
@@ -42,7 +53,7 @@ async function buildTrayMenu() {
     {
       label: lightingState.enabled ? 'Lighting off' : 'Lighting on',
       enabled: Boolean(lightingState.connected),
-      click: () => lighting.setEnabled(!lightingState.enabled).catch(() => {})
+      click: () => remember(lighting.setEnabled(!lightingState.enabled)).catch(() => {})
     },
     { type: 'separator' },
     { label: 'Quit', click: () => { quitting = true; app.quit(); } }
@@ -110,7 +121,7 @@ ipcMain.handle('audio:set-muted', async (_event, muted) => {
 
 ipcMain.handle('profiles:list', () => profiles.list());
 ipcMain.handle('profiles:save', (_event, name) => profiles.save(name));
-ipcMain.handle('profiles:apply', (_event, id) => profiles.apply(String(id)));
+ipcMain.handle('profiles:apply', (_event, id) => remember(profiles.apply(String(id))));
 ipcMain.handle('profiles:delete', (_event, id) => profiles.remove(String(id)));
 
 ipcMain.handle('app:get-settings', () => settings.load());
@@ -124,16 +135,16 @@ ipcMain.handle('app:set-launch-at-login', (_event, enabled) => {
 });
 
 ipcMain.handle('lighting:get-state', () => lighting.getState());
-ipcMain.handle('lighting:set-enabled', (_event, enabled) => lighting.setEnabled(enabled));
-ipcMain.handle('lighting:set-brightness', (_event, brightness) => lighting.setBrightness(brightness));
-ipcMain.handle('lighting:set-mode', (_event, mode) => lighting.setMode(mode));
-ipcMain.handle('lighting:set-color', (_event, color) => lighting.setColor(color));
-ipcMain.handle('lighting:set-colors', (_event, colors) => lighting.setColors(colors));
-ipcMain.handle('lighting:set-colors2', (_event, colors) => lighting.setColors2(colors));
-ipcMain.handle('lighting:set-speed', (_event, speed) => lighting.setSpeed(speed));
-ipcMain.handle('lighting:set-direction', (_event, direction) => lighting.setDirection(direction));
-ipcMain.handle('lighting:set-active-slot', (_event, index) => lighting.setActiveSlot(index));
-ipcMain.handle('device:set-output-target', (_event, target) => lighting.setOutputTarget(target));
+ipcMain.handle('lighting:set-enabled', (_event, enabled) => remember(lighting.setEnabled(enabled)));
+ipcMain.handle('lighting:set-brightness', (_event, brightness) => remember(lighting.setBrightness(brightness)));
+ipcMain.handle('lighting:set-mode', (_event, mode) => remember(lighting.setMode(mode)));
+ipcMain.handle('lighting:set-color', (_event, color) => remember(lighting.setColor(color)));
+ipcMain.handle('lighting:set-colors', (_event, colors) => remember(lighting.setColors(colors)));
+ipcMain.handle('lighting:set-colors2', (_event, colors) => remember(lighting.setColors2(colors)));
+ipcMain.handle('lighting:set-speed', (_event, speed) => remember(lighting.setSpeed(speed)));
+ipcMain.handle('lighting:set-direction', (_event, direction) => remember(lighting.setDirection(direction)));
+ipcMain.handle('lighting:set-active-slot', (_event, index) => remember(lighting.setActiveSlot(index)));
+ipcMain.handle('device:set-output-target', (_event, target) => remember(lighting.setOutputTarget(target)));
 
 ipcMain.handle('device:get-info', () => deviceInfo.getInfo());
 ipcMain.handle('device:open-link', (_event, url) => {
@@ -143,16 +154,16 @@ ipcMain.handle('device:open-link', (_event, url) => {
 });
 
 ipcMain.handle('effects:get-state', (_event, output) => effects.getState(output));
-ipcMain.handle('effects:set', (_event, id, changes, output) => effects.setEffect(id, changes || {}, output));
-ipcMain.handle('effects:set-master', (_event, enabled, output) => effects.setMaster(Boolean(enabled), output));
-ipcMain.handle('effects:apply-sound-mode', (_event, id, output) => effects.applySoundMode(id, output));
+ipcMain.handle('effects:set', (_event, id, changes, output) => remember(effects.setEffect(id, changes || {}, output)));
+ipcMain.handle('effects:set-master', (_event, enabled, output) => remember(effects.setMaster(Boolean(enabled), output)));
+ipcMain.handle('effects:apply-sound-mode', (_event, id, output) => remember(effects.applySoundMode(id, output)));
 ipcMain.handle('effects:save-sound-mode', (_event, name, output) => effects.saveSoundMode(name, output));
 ipcMain.handle('effects:delete-sound-mode', (_event, id, output) => effects.deleteSoundMode(String(id), output));
-ipcMain.handle('effects:reset-sound-mode', (_event, id, output) => effects.resetSoundMode(String(id), output));
+ipcMain.handle('effects:reset-sound-mode', (_event, id, output) => remember(effects.resetSoundMode(String(id), output)));
 ipcMain.handle('mic-eq:get-state', () => effects.getMicEqState());
 ipcMain.handle('mic-eq:set', (_event, changes) => effects.setMicEq(changes || {}));
 ipcMain.handle('eq:get-state', (_event, output) => effects.getEqState(output));
-ipcMain.handle('eq:set', (_event, changes, output) => effects.setEq(changes || {}, output));
+ipcMain.handle('eq:set', (_event, changes, output) => remember(effects.setEq(changes || {}, output)));
 
 ipcMain.handle('mic:get-state', () => capture.getState());
 ipcMain.handle('mic:set-volume', (_event, volume) => capture.setVolume(volume));
@@ -236,10 +247,17 @@ function watchSpeakerPresence() {
   lighting.watchPresence((connected) => broadcast('lighting:presence', connected));
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   settings.init(app.getPath('userData'));
   effects.init(app.getPath('userData'));
   profiles = createStore({ directory: app.getPath('userData'), capture: captureSnapshot, apply: applySnapshot });
+  lastSettings = createLastSettingsStore({
+    directory: app.getPath('userData'),
+    capture: captureSnapshot,
+    apply: applySnapshot,
+    onError: (error) => console.warn('Could not save last settings:', error.message)
+  });
+  await lastSettings.restore().catch((error) => console.warn('Could not restore last settings:', error.message));
   // With "Start in tray" on, the window is created but stays hidden until the
   // tray icon is clicked; the tray must exist first so the app stays reachable.
   createTray();
@@ -249,7 +267,18 @@ app.whenReady().then(() => {
   app.on('activate', showWindow);
 });
 
-app.on('before-quit', () => { quitting = true; });
+app.on('before-quit', (event) => {
+  quitting = true;
+  if (quitReady || !lastSettings) return;
+  event.preventDefault();
+  if (quitFlush) return;
+  quitFlush = lastSettings.flush()
+    .catch((error) => console.warn('Could not save last settings before quitting:', error.message))
+    .finally(() => {
+      quitReady = true;
+      app.quit();
+    });
+});
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
   capture.stop();

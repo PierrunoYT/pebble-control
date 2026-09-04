@@ -7,7 +7,7 @@
   "license": "MIT",
   "scripts": {
     "start": "electron .",
-    "check": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js && node --check src/lighting.js && node --check src/capture.js && node --check src/effects.js && node --check src/device-info.js && node --check src/settings.js && node --check src/profiles.js && node --check src/snapshot.js && node --check src/accelerator.js",
+    "check": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js && node --check src/lighting.js && node --check src/capture.js && node --check src/effects.js && node --check src/device-info.js && node --check src/settings.js && node --check src/profiles.js && node --check src/last-settings.js && node --check src/snapshot.js && node --check src/accelerator.js",
     "icon": "node scripts/make-icons.js",
     "test": "node --test test/*.test.js",
     "dist": "electron-builder --win nsis"

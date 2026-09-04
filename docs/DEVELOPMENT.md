@@ -23,6 +23,7 @@ Pebble Control/
 |   |-- settings.js   Persistent app settings in the user data folder
 |   |-- accelerator.js  Keyboard event to accelerator string, shared with tests
 |   |-- profiles.js   Named profile store in profiles.json
+|   |-- last-settings.js  Automatic last-session snapshot store
 |   |-- snapshot.js   Captures and applies every setting a profile covers
 |   |-- audio-bridge.ps1  Core Audio COM bridge run as a child process
 |   |-- preload.js    Restricted renderer bridge
@@ -68,7 +69,7 @@ The application is Windows-focused. The renderer can load on other platforms, bu
 
 `src/settings.js` keeps `settings.json` in Electron's user data folder and accepts only known keys with sane types, so a hand-edited file cannot inject values. With `startInTray` set, the window is created hidden after the tray exists.
 
-`src/profiles.js` keeps `profiles.json` next to the settings and is independent of the hardware: it takes a capture function and an apply function, which `src/snapshot.js` provides using the lighting and effects modules. Apply restores the lighting slot first, then the output, then each output's effects and equalizer, and sets the Acoustic Engine master last so a profile saved with processing off ends up off.
+`src/profiles.js` keeps `profiles.json` next to the settings and is independent of the hardware: it takes a capture function and an apply function, which `src/snapshot.js` provides using the lighting and effects modules. `src/last-settings.js` uses the same snapshot functions to debounce automatic saves to `last-settings.json` and restore the latest speaker setup at launch. Apply restores the lighting slot first, then the output, then each output's effects and equalizer, and sets the Acoustic Engine master last so a profile saved with processing off ends up off.
 
 ### Audio Bridge
 
