@@ -134,7 +134,7 @@ Sources: live probing of a Pebble X Plus (firmware release 4720) and the decompi
 | `2c` | SpeakerOutputTargetSelectionControl | `00 <mask u32>` set, `01` get, `02` support | Mask `2` PowerAmplifierOut (speakers), `4` Headphone. Support reply lists both. Switching to `4` routes audio to the headphone jack; unsupported masks are rejected with `81`. |
 | `3a` | LEDControl | see above | |
 
-Audio level, mute, EQ, speaker configuration, subwoofer, sound mode, and feature control get no reply. Creative App's Acoustic Engine, 10-band equalizer, and sound modes for this speaker are host-side processing in the Creative USB audio driver, not speaker commands.
+Audio level, mute, EQ, speaker configuration, subwoofer, sound mode, and feature control get no reply. Creative App's Acoustic Engine, 10-band equalizer, and sound modes for this speaker are host-side processing in the Creative USB audio driver, not speaker commands. They are configured through the Windows effects property store instead; see the Acoustic Engine section.
 
 **Beat reaction** (type 9, not on this speaker): `<version> <mode> <idle brightness> <beat brightness> <cooldown ms u16>`.
 
@@ -197,7 +197,7 @@ Before a release:
 
 1. Run `npm run check` and `npm test`. The tests in `test/` run the lighting module against a scripted fake speaker (`test/fake-hid.js`) and cover report framing, colour decoding, rejection handling, capability parsing, slots, and the output target, plus the microphone device selection and format labels, so protocol changes can be checked without hardware.
 2. Run `npm start` and test volume, mute, every preset, and launch at startup.
-3. With a Pebble X Plus on USB: switch slots and effects, edit colours, speed, and direction, toggle lighting power, switch between Speakers and Headphones, and change the microphone level and mute. Confirm the Device panel shows firmware 1.27 or newer, the Creative driver version, and that each support link opens in the browser.
+3. With a Pebble X Plus on USB: switch slots and effects, edit colours, speed, and direction, toggle lighting power, switch between Speakers and Headphones, and change the microphone level and mute. Confirm the Device panel shows firmware 1.27 or newer, the Creative driver version, and that each support link opens in the browser. In the Acoustic Engine panel, enable an effect and confirm Processing turns on, move its level, switch Smart Volume's mode, then open Creative App's Acoustic Engine page and confirm it shows the same values; restore the original settings afterwards.
 4. Unplug and reconnect the USB cable; the lighting and microphone panels should disable and re-enable within a second or two.
 5. Close the window and confirm the tray icon remains, its menu reflects mute and lighting state, and Quit exits.
 6. Press Ctrl+Alt+Up, Ctrl+Alt+Down, and Ctrl+Alt+M with the window hidden and confirm the volume display has caught up when it is shown again.

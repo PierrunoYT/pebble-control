@@ -25,7 +25,7 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
 ## Audio over USB
 
 - [x] **Probe audio commands on the Pebble X Plus**
-  Done. Only max payload size (`0x03`), device information (`0x09`), output target selection (`0x2c`), and LED control (`0x3a`) answer. Audio level, mute, EQ, speaker configuration, subwoofer, and sound mode get no reply, so hardware volume and subwoofer level are not possible over USB. Creative App's equalizer, Acoustic Engine, and sound modes are host-side driver processing.
+  Done. Only max payload size (`0x03`), device information (`0x09`), output target selection (`0x2c`), and LED control (`0x3a`) answer. Audio level, mute, EQ, speaker configuration, subwoofer, and sound mode get no reply, so hardware volume and subwoofer level are not possible over USB. Creative App's equalizer, Acoustic Engine, and sound modes are host-side driver processing, reachable through the Windows effects property store (see the Acoustic Engine panel task).
 
 - [x] **Output target switch**
   Add a Speakers / Headphones toggle using command `0x2c`: operation `01` reads the current mask, `00` plus a 32-bit mask sets it, `02` lists supported masks. The speaker reports `2` (speakers) and `4` (headphone jack). Verified round-trip on hardware.
