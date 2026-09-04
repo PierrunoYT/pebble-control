@@ -207,7 +207,7 @@ lightingMode.addEventListener('change', async () => {
   const mode = Number(lightingMode.value);
   renderLighting({ mode });
   try {
-    await window.pebble.setLightingMode(mode);
+    renderLighting(await window.pebble.setLightingMode(mode));
     lightingStatus.textContent = `${lightingMode.selectedOptions[0].textContent} effect applied`;
   } catch (error) {
     renderLighting({ mode: previousMode });

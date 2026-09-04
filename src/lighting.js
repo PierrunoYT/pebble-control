@@ -218,7 +218,8 @@ function setMode(requestedMode) {
     if (!supportedModes.includes(mode)) throw new TypeError('This speaker does not support that lighting mode');
     const activeIndex = query(device, [OPERATION.getActiveIndex])[1];
     update(device, [OPERATION.setMode, activeIndex, mode]);
-    return mode;
+    const colors = readColors(device, activeIndex);
+    return { mode, colors, color: colors[0] || '#ffffff' };
   });
 }
 

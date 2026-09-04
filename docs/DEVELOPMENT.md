@@ -73,7 +73,7 @@ The window uses `contextIsolation`, disables renderer Node.js integration, and r
 | `getLightingState()` | lighting state object | Read Pebble X Plus connection, power, brightness, mode, and the active effect's color list |
 | `setLightingEnabled(enabled)` | `boolean` | Enable or disable the RGB LEDs |
 | `setLightingBrightness(value)` | `number` | Set hardware brightness from 0 to 255 |
-| `setLightingMode(mode)` | `number` | Select a validated, device-supported effect |
+| `setLightingMode(mode)` | `{ mode, colors, color }` | Select a validated, device-supported effect and return its color list |
 | `setLightingColor(color)` | `{ color, colors, mode }` | Switch to Static and fill every gradient stop with one `#RRGGBB` color |
 | `setLightingColors(colors)` | `{ colors, mode }` | Replace the active effect's color list; the length must match what the effect holds |
 
