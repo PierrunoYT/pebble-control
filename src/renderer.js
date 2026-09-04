@@ -7,10 +7,26 @@ const deviceStatus = document.querySelector('#deviceStatus');
 const deviceName = document.querySelector('#deviceName');
 const outputDetail = document.querySelector('#outputDetail');
 const presets = [...document.querySelectorAll('.preset')];
+const lightingCard = document.querySelector('#lightingCard');
+const lightingControls = document.querySelector('#lightingControls');
+const lightingToggle = document.querySelector('#lightingToggle');
+const lightingStatus = document.querySelector('#lightingStatus');
+const lightingMode = document.querySelector('#lightingMode');
+const lightingColors = document.querySelector('#lightingColors');
+const lightingColorsTitle = document.querySelector('#lightingColorsTitle');
+const lightingColorsHint = document.querySelector('#lightingColorsHint');
+const lightingMatchColors = document.querySelector('#lightingMatchColors');
+const lightingBrightness = document.querySelector('#lightingBrightness');
+const lightingBrightnessValue = document.querySelector('#lightingBrightnessValue');
 
 let state = { volume: 50, muted: false };
 let volumeTimer;
 let isAdjusting = false;
+let lightingState = { connected: false, enabled: false, brightness: 255, mode: 11, color: '#ffffff', colors: [] };
+let colorTimer;
+let lastColorEdit = 0;
+let brightnessTimer;
+let isAdjustingLighting = false;
 
 function render(nextState) {
   state = { ...state, ...nextState };
@@ -23,6 +39,58 @@ function render(nextState) {
   presets.forEach((preset) => {
     preset.classList.toggle('active', Number(preset.dataset.volume) === state.volume && !state.muted);
   });
+}
+
+function renderLighting(nextState) {
+  lightingState = { ...lightingState, ...nextState };
+  const connected = Boolean(lightingState.connected);
+  lightingCard.classList.toggle('disconnected', !connected);
+  lightingControls.disabled = !connected;
+  lightingToggle.disabled = !connected;
+  lightingToggle.checked = connected && lightingState.enabled;
+  lightingMode.value = String(lightingState.mode);
+  renderColorStops(Array.isArray(lightingState.colors) ? lightingState.colors : []);
+  lightingBrightness.value = lightingState.brightness;
+  lightingBrightness.style.setProperty('--volume', `${(lightingState.brightness / 255) * 100}%`);
+  lightingBrightnessValue.textContent = lightingState.brightness;
+
+  if (Array.isArray(lightingState.supportedModes)) {
+    [...lightingMode.options].forEach((option) => {
+      option.disabled = !lightingState.supportedModes.includes(Number(option.value));
+    });
+  }
+}
+
+function renderColorStops(colors) {
+  const wells = [...lightingColors.querySelectorAll('input')];
+  if (wells.length !== colors.length) {
+    lightingColors.replaceChildren(...colors.map((color, index) => {
+      const well = document.createElement('label');
+      well.className = 'color-well';
+      const input = document.createElement('input');
+      input.type = 'color';
+      input.value = color;
+      input.dataset.index = String(index);
+      input.setAttribute('aria-label', colors.length > 1 ? `Gradient stop ${index + 1}` : 'Effect color');
+      well.append(input);
+      return well;
+    }));
+  } else {
+    wells.forEach((input, index) => { input.value = colors[index]; });
+  }
+
+  lightingColors.classList.toggle('single', colors.length === 1);
+  lightingMatchColors.hidden = colors.length < 2;
+  if (colors.length > 1) {
+    lightingColorsTitle.textContent = 'Gradient';
+    lightingColorsHint.textContent = `${colors.length} stops blend across both speakers`;
+  } else if (colors.length === 1) {
+    lightingColorsTitle.textContent = 'Effect color';
+    lightingColorsHint.textContent = 'Both speakers use this color';
+  } else {
+    lightingColorsTitle.textContent = 'Colors';
+    lightingColorsHint.textContent = 'This effect has no adjustable colors';
+  }
 }
 
 function showStatus(message, isError = false) {
@@ -52,6 +120,20 @@ async function findDefaultOutput() {
     outputDetail.textContent = label;
   } catch (error) {
     // The generic Windows label remains accurate when device enumeration is unavailable.
+  }
+}
+
+async function syncLighting() {
+  try {
+    const nextState = await window.pebble.getLightingState();
+    if (!isAdjustingLighting && Date.now() - lastColorEdit > 1500) renderLighting(nextState);
+    lightingStatus.textContent = nextState.connected ? 'Creative Pebble X Plus connected' : 'Connect by USB to control RGB';
+    lightingStatus.classList.remove('error');
+  } catch (error) {
+    console.error('Lighting sync failed:', error);
+    renderLighting({ connected: false });
+    lightingStatus.textContent = 'Lighting control unavailable';
+    lightingStatus.classList.add('error');
   }
 }
 
@@ -108,13 +190,87 @@ launchToggle.addEventListener('change', async () => {
   }
 });
 
+lightingToggle.addEventListener('change', async () => {
+  const enabled = lightingToggle.checked;
+  renderLighting({ enabled });
+  try {
+    await window.pebble.setLightingEnabled(enabled);
+    lightingStatus.textContent = enabled ? 'Lighting enabled' : 'Lighting disabled';
+  } catch (error) {
+    renderLighting({ enabled: !enabled });
+    lightingStatus.textContent = 'Could not change lighting power';
+  }
+});
+
+lightingMode.addEventListener('change', async () => {
+  const previousMode = lightingState.mode;
+  const mode = Number(lightingMode.value);
+  renderLighting({ mode });
+  try {
+    await window.pebble.setLightingMode(mode);
+    lightingStatus.textContent = `${lightingMode.selectedOptions[0].textContent} effect applied`;
+  } catch (error) {
+    renderLighting({ mode: previousMode });
+    lightingStatus.textContent = 'Could not change lighting effect';
+  }
+});
+
+function applyColors(colors) {
+  lastColorEdit = Date.now();
+  renderLighting({ colors, color: colors[0] });
+  clearTimeout(colorTimer);
+  colorTimer = setTimeout(async () => {
+    try {
+      const result = await window.pebble.setLightingColors(colors);
+      renderLighting(result);
+      lightingStatus.textContent = colors.length > 1 ? 'Gradient applied' : 'Effect color applied';
+    } catch (error) {
+      lightingStatus.textContent = 'Could not change lighting colors';
+      await syncLighting();
+    }
+  }, 100);
+}
+
+lightingColors.addEventListener('pointerdown', () => { isAdjustingLighting = true; });
+lightingColors.addEventListener('input', (event) => {
+  const input = event.target;
+  if (!(input instanceof HTMLInputElement)) return;
+  const colors = [...lightingState.colors];
+  colors[Number(input.dataset.index)] = input.value;
+  applyColors(colors);
+});
+
+lightingMatchColors.addEventListener('click', () => {
+  if (!lightingState.colors.length) return;
+  applyColors(lightingState.colors.map(() => lightingState.colors[0]));
+});
+
+lightingBrightness.addEventListener('pointerdown', () => { isAdjustingLighting = true; });
+window.addEventListener('pointerup', () => { isAdjustingLighting = false; });
+lightingBrightness.addEventListener('input', () => {
+  const brightness = Number(lightingBrightness.value);
+  renderLighting({ brightness });
+  clearTimeout(brightnessTimer);
+  brightnessTimer = setTimeout(async () => {
+    try {
+      await window.pebble.setLightingBrightness(brightness);
+      lightingStatus.textContent = 'Lighting brightness updated';
+    } catch (error) {
+      lightingStatus.textContent = 'Could not change lighting brightness';
+      await syncLighting();
+    }
+  }, 80);
+});
+
 async function initialize() {
   await Promise.all([
     syncAudio(),
+    syncLighting(),
     findDefaultOutput(),
     window.pebble.getLaunchAtLogin().then((enabled) => { launchToggle.checked = enabled; })
   ]);
   window.setInterval(syncAudio, 2500);
+  window.setInterval(syncLighting, 5000);
 }
 
 initialize();

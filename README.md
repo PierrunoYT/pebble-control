@@ -10,12 +10,14 @@ A lightweight Windows desktop companion for Creative Pebble speakers. Pebble Con
 - Late night, everyday, and immersive volume presets
 - Active Windows audio output label
 - Optional launch at login
+- Pebble X Plus RGB power, brightness, effect, and gradient color control over USB
 - Responsive desktop interface
 
 ## Requirements
 
 - Windows 10 or Windows 11
 - A Creative Pebble speaker connected and selected as the Windows output device
+- A Creative Pebble X Plus connected by USB for RGB controls
 - Node.js and npm only when running from source
 
 ## Install
@@ -53,4 +55,4 @@ Build output is written to `dist/`. See the [Development Guide](docs/DEVELOPMENT
 
 ## Limitations
 
-Creative Pebble speakers do not expose a public control protocol for hardware EQ, lighting, power, or the physical volume knob. Pebble Control changes the Windows output routed to the speakers; it cannot change unsupported hardware settings.
+Windows audio controls work with any output routed to Creative Pebble speakers. Direct RGB control is limited to the Creative Pebble X Plus with USB VID/PID `041E:329A`; other Pebble models are not sent hardware commands. Hardware EQ, speaker power, gain mode, and the physical volume knob remain outside the app's control.

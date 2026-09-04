@@ -96,6 +96,48 @@
         </article>
       </section>
 
+      <section class="lighting-card panel" id="lightingCard">
+        <div class="panel-heading lighting-heading">
+          <div>
+            <p class="label">PEBBLE X PLUS</p>
+            <h2>Ambient lighting</h2>
+          </div>
+          <label class="launch-setting lighting-power">
+            <span><strong>Lighting</strong><small id="lightingStatus">Finding speaker...</small></span>
+            <input id="lightingToggle" type="checkbox" disabled>
+            <span class="toggle" aria-hidden="true"></span>
+          </label>
+        </div>
+
+        <fieldset class="lighting-controls" id="lightingControls" disabled>
+          <div class="color-control">
+            <div class="color-stops" id="lightingColors" role="group" aria-label="Effect colors"></div>
+            <span>
+              <strong id="lightingColorsTitle">Gradient</strong>
+              <small id="lightingColorsHint">Five stops blend across both speakers</small>
+              <button class="text-button" id="lightingMatchColors" type="button">Use one color for all stops</button>
+            </span>
+          </div>
+          <label class="lighting-field">
+            <span>Effect</span>
+            <select id="lightingMode" aria-label="Lighting effect">
+              <option value="11">Chasers</option>
+              <option value="8">Aurora</option>
+              <option value="10">Peak Meter</option>
+              <option value="9">Glowing</option>
+              <option value="4">Wave</option>
+              <option value="1">Cycle</option>
+              <option value="3">Static</option>
+              <option value="7">Morph</option>
+            </select>
+          </label>
+          <label class="lighting-field brightness-field">
+            <span>Brightness <strong><span id="lightingBrightnessValue">255</span> / 255</strong></span>
+            <input id="lightingBrightness" type="range" min="0" max="255" value="255" aria-label="Lighting brightness">
+          </label>
+        </fieldset>
+      </section>
+
       <section class="utility-bar panel">
         <div class="output-detail">
           <span class="utility-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span>

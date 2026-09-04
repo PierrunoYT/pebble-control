@@ -7,11 +7,12 @@
   "license": "MIT",
   "scripts": {
     "start": "electron .",
-    "check": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js",
+    "check": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js && node --check src/lighting.js",
     "dist": "electron-builder --win nsis"
   },
   "dependencies": {
-    "loudness": "^0.4.2"
+    "loudness": "^0.4.2",
+    "node-hid": "^3.4.0"
   },
   "devDependencies": {
     "electron": "^37.2.6",

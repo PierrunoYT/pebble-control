@@ -5,5 +5,11 @@ contextBridge.exposeInMainWorld('pebble', {
   setVolume: (volume) => ipcRenderer.invoke('audio:set-volume', volume),
   setMuted: (muted) => ipcRenderer.invoke('audio:set-muted', muted),
   getLaunchAtLogin: () => ipcRenderer.invoke('app:get-launch-at-login'),
-  setLaunchAtLogin: (enabled) => ipcRenderer.invoke('app:set-launch-at-login', enabled)
+  setLaunchAtLogin: (enabled) => ipcRenderer.invoke('app:set-launch-at-login', enabled),
+  getLightingState: () => ipcRenderer.invoke('lighting:get-state'),
+  setLightingEnabled: (enabled) => ipcRenderer.invoke('lighting:set-enabled', enabled),
+  setLightingBrightness: (brightness) => ipcRenderer.invoke('lighting:set-brightness', brightness),
+  setLightingMode: (mode) => ipcRenderer.invoke('lighting:set-mode', mode),
+  setLightingColor: (color) => ipcRenderer.invoke('lighting:set-color', color),
+  setLightingColors: (colors) => ipcRenderer.invoke('lighting:set-colors', colors)
 });

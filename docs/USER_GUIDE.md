@@ -4,7 +4,7 @@
 
 Pebble Control provides a compact control surface for the current Windows default audio output. When a Creative Pebble is selected as that output, changes made in the app affect sound played through the speakers.
 
-The app controls Windows audio, not the speaker firmware. The physical volume knob, power state, hardware gain mode, lighting, and equalizer settings are outside the app's control.
+The app controls Windows audio on all Pebble models. When a Creative Pebble X Plus is connected by USB, it can also control the speaker's RGB lighting. The physical volume knob, speaker power, hardware gain mode, and equalizer settings remain outside the app's control.
 
 ## Installation
 
@@ -51,6 +51,20 @@ Presets do not apply equalization or change the sound profile.
 
 Enable **Launch at startup** to open Pebble Control when you sign in to Windows. Disable it at any time from the same switch.
 
+### Pebble X Plus Lighting
+
+Connect the Creative Pebble X Plus directly by USB. The Ambient lighting panel becomes available when Pebble Control finds the speaker's lighting interface.
+
+- Use **Lighting** to turn the RGB LEDs on or off.
+- Select Chasers, Aurora, Peak Meter, Glowing, Wave, Cycle, Static, or Morph from **Effect**.
+- Drag **Brightness** to set the hardware brightness from 0 to 255.
+- Pick the effect's colors from the color wells. Static, Glowing, Wave, and Peak Meter use a five-stop gradient that blends across both speakers; Morph and Chasers use one color; Cycle and Aurora have no adjustable colors.
+- Use **Use one color for all stops** to turn a gradient into a single flat color, then adjust any stop to bring the gradient back.
+
+Both speakers always show the same lighting. The Pebble X Plus does not support different colors on the left and right speaker.
+
+RGB control is specific to Pebble X Plus USB device `041E:329A`. It does not send lighting commands to other Pebble models, and it is unavailable over an audio-only or Bluetooth connection.
+
 ## Troubleshooting
 
 ### The Wrong Device Is Being Controlled
@@ -75,6 +89,13 @@ Bluetooth latency is determined by the Bluetooth connection and audio codec. Peb
 ### Startup Launch Does Not Work
 
 Check **Settings > Apps > Startup** and ensure Pebble Control is enabled. Corporate device policies may prevent applications from adding themselves to startup.
+
+### Lighting Controls Are Unavailable
+
+1. Confirm the speaker is a Creative Pebble X Plus.
+2. Connect its USB cable directly to the computer, not only through Bluetooth or a 3.5 mm audio cable.
+3. Disconnect and reconnect the USB cable, then reopen Pebble Control.
+4. Close other lighting utilities if they prevent access to the speaker.
 
 ## Uninstall
 

@@ -1,6 +1,7 @@
 const path = require('node:path');
 const { app, BrowserWindow, ipcMain } = require('electron');
 const loudness = require('loudness');
+const lighting = require('./lighting');
 
 let mainWindow;
 
@@ -47,6 +48,13 @@ ipcMain.handle('app:set-launch-at-login', (_event, enabled) => {
   app.setLoginItemSettings({ openAtLogin: Boolean(enabled) });
   return app.getLoginItemSettings().openAtLogin;
 });
+
+ipcMain.handle('lighting:get-state', () => lighting.getState());
+ipcMain.handle('lighting:set-enabled', (_event, enabled) => lighting.setEnabled(enabled));
+ipcMain.handle('lighting:set-brightness', (_event, brightness) => lighting.setBrightness(brightness));
+ipcMain.handle('lighting:set-mode', (_event, mode) => lighting.setMode(mode));
+ipcMain.handle('lighting:set-color', (_event, color) => lighting.setColor(color));
+ipcMain.handle('lighting:set-colors', (_event, colors) => lighting.setColors(colors));
 
 app.whenReady().then(() => {
   createWindow();

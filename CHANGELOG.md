@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## Unreleased
 
+### Added
+
+- Direct Creative Pebble X Plus RGB power, brightness, effect, and color controls, including the five-stop gradient used by Static, Glowing, Wave, and Peak Meter.
+- Device-scoped HID transport with response validation and a restricted Electron IPC bridge.
+
 ## 1.0.0 - 2026-09-04
 
 ### Added

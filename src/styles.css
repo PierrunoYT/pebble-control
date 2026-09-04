@@ -26,6 +26,7 @@ body {
 
 button, input { font: inherit; }
 button { color: inherit; }
+select { color: inherit; font: inherit; }
 
 .ambient {
   position: fixed;
@@ -104,6 +105,33 @@ input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; transform: 
 .preset strong { font-size: 12px; font-weight: 600; }
 .preset small { margin-top: 2px; color: var(--muted); font-size: 9px; }
 
+.lighting-card { margin-top: 14px; padding: 24px 27px; border-radius: 20px; }
+.lighting-card.disconnected { opacity: .68; }
+.lighting-heading { gap: 24px; }
+.lighting-power { flex: 0 0 auto; }
+.lighting-power small.error { color: #ef846f; }
+.lighting-controls { display: grid; grid-template-columns: 1fr .75fr 1.35fr; align-items: center; gap: 24px; min-width: 0; margin: 22px 0 0; padding: 19px 20px; border: 1px solid var(--line); border-radius: 15px; background: rgba(0,0,0,.12); }
+.lighting-controls:disabled { opacity: .48; }
+.color-control { display: flex; align-items: center; gap: 13px; min-width: 0; }
+.color-control strong, .color-control small { display: block; }
+.color-control strong { font-size: 12px; }
+.color-control small { margin-top: 3px; color: var(--muted); font-size: 9px; line-height: 1.35; }
+.color-stops { display: flex; flex: 0 0 auto; gap: 6px; }
+.color-stops:empty { display: none; }
+.color-well { position: relative; flex: 0 0 auto; width: 34px; height: 46px; overflow: hidden; border: 3px solid rgba(255,255,255,.12); border-radius: 12px; cursor: pointer; }
+.color-stops.single .color-well { width: 46px; border-radius: 14px; }
+.color-well:focus-within { border-color: var(--acid); }
+.color-well input { position: absolute; inset: -8px; width: calc(100% + 16px); height: calc(100% + 16px); padding: 0; border: 0; cursor: pointer; }
+.text-button { display: block; margin-top: 5px; padding: 0; border: 0; background: none; color: var(--acid); font: inherit; font-size: 9px; letter-spacing: .04em; cursor: pointer; }
+.text-button:hover { text-decoration: underline; }
+.text-button[hidden] { display: none; }
+.lighting-field { display: grid; gap: 9px; min-width: 0; color: var(--muted); font-size: 9px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.lighting-field > span { display: flex; justify-content: space-between; gap: 12px; }
+.lighting-field strong { color: var(--text); font-weight: 600; }
+.lighting-field select { width: 100%; height: 38px; padding: 0 34px 0 12px; border: 1px solid var(--line); border-radius: 10px; outline: none; background: #20211c; font-size: 11px; text-transform: none; }
+.lighting-field select:focus-visible { border-color: var(--acid); outline: 2px solid var(--acid-soft); }
+.brightness-field input { margin-top: 7px; }
+
 .utility-bar { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding: 17px 22px; border-radius: 16px; }
 .output-detail, .launch-setting { display: flex; align-items: center; gap: 12px; }
 .utility-icon { width: 34px; height: 34px; padding: 8px; border-radius: 50%; color: var(--acid); background: var(--acid-soft); }
@@ -130,6 +158,8 @@ footer { display: flex; justify-content: space-between; padding: 17px 4px 0; col
   .hero-copy { padding-bottom: 50px; }
   .intro { max-width: 430px; }
   .control-grid { grid-template-columns: 1fr; }
+  .lighting-controls { grid-template-columns: 1fr 1fr; }
+  .brightness-field { grid-column: 1 / -1; }
   .device-status { max-width: 46%; }
 }
 
@@ -141,6 +171,11 @@ footer { display: flex; justify-content: space-between; padding: 17px 4px 0; col
   .speaker-stage { display: none; }
   .hero-copy { padding-bottom: 20px; }
   .volume-card, .presets-card { padding: 22px 20px; }
+  .lighting-card { padding: 22px 20px; }
+  .lighting-heading { align-items: flex-start; flex-direction: column; }
+  .lighting-power { width: 100%; justify-content: space-between; }
+  .lighting-controls { grid-template-columns: 1fr; padding: 17px; }
+  .brightness-field { grid-column: auto; }
   .utility-bar { align-items: flex-start; gap: 18px; flex-direction: column; }
   .launch-setting { width: 100%; justify-content: space-between; }
   footer { gap: 10px; }
