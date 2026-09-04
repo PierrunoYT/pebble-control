@@ -468,6 +468,128 @@ lightingBrightness.addEventListener('input', () => {
   }, 80);
 });
 
+// Microphone card: the Pebble X Plus capture endpoint, driven through the
+// main process audio bridge.
+const recordingCard = document.querySelector('#recordingCard');
+const micControls = document.querySelector('#micControls');
+const micName = document.querySelector('#micName');
+const micStatus = document.querySelector('#micStatus');
+const micMuteButton = document.querySelector('#micMuteButton');
+const micVolume = document.querySelector('#micVolume');
+const micVolumeValue = document.querySelector('#micVolumeValue');
+const micFormat = document.querySelector('#micFormat');
+const micDefaultButton = document.querySelector('#micDefaultButton');
+const micDefaultHint = document.querySelector('#micDefaultHint');
+
+let micState = { connected: false, volume: 100, muted: false, isDefault: false, formats: [], format: null };
+let micVolumeTimer;
+let isAdjustingMic = false;
+let lastMicEdit = 0;
+
+function renderMic(nextState) {
+  micState = { ...micState, ...nextState };
+  const connected = Boolean(micState.connected);
+  recordingCard.hidden = !connected && !micState.everSeen;
+  micControls.disabled = !connected;
+  if (!connected) return;
+  micName.textContent = micState.name || 'Microphone';
+  micVolume.value = micState.volume;
+  micVolume.style.setProperty('--volume', `${micState.volume}%`);
+  micVolumeValue.textContent = micState.volume;
+  micMuteButton.setAttribute('aria-pressed', String(micState.muted));
+  micMuteButton.setAttribute('aria-label', micState.muted ? 'Unmute microphone' : 'Mute microphone');
+
+  const formats = Array.isArray(micState.formats) ? micState.formats : [];
+  const current = [...micFormat.options].map((option) => option.value).join();
+  if (current !== formats.map((format) => format.key).join()) {
+    micFormat.replaceChildren(...formats.map((format) => {
+      const option = document.createElement('option');
+      option.value = format.key;
+      option.textContent = format.label;
+      return option;
+    }));
+  }
+  if (micState.format) {
+    if (![...micFormat.options].some((option) => option.value === micState.format.key)) {
+      const option = document.createElement('option');
+      option.value = micState.format.key;
+      option.textContent = micState.format.label;
+      micFormat.prepend(option);
+    }
+    micFormat.value = micState.format.key;
+  }
+  micFormat.disabled = formats.length < 2;
+
+  micDefaultButton.hidden = micState.isDefault;
+  micDefaultHint.textContent = micState.isDefault ? 'Windows default microphone' : 'Not the Windows default';
+}
+
+async function syncMic() {
+  try {
+    const nextState = await window.pebble.getMicState();
+    if (!isAdjustingMic && Date.now() - lastMicEdit > 1500) renderMic({ ...nextState, everSeen: micState.everSeen || nextState.connected });
+    micStatus.textContent = nextState.connected ? (nextState.muted ? 'Muted' : 'Ready') : 'Connect the speaker by USB';
+    micStatus.classList.remove('error');
+  } catch (error) {
+    console.error('Microphone sync failed:', error);
+    renderMic({ connected: false });
+    micStatus.textContent = 'Microphone control unavailable';
+    micStatus.classList.add('error');
+  }
+}
+
+micVolume.addEventListener('pointerdown', () => { isAdjustingMic = true; });
+window.addEventListener('pointerup', () => { isAdjustingMic = false; });
+micVolume.addEventListener('input', () => {
+  const volume = Number(micVolume.value);
+  lastMicEdit = Date.now();
+  renderMic({ volume });
+  clearTimeout(micVolumeTimer);
+  micVolumeTimer = setTimeout(async () => {
+    try {
+      await window.pebble.setMicVolume(volume);
+      micStatus.textContent = 'Level updated';
+    } catch (error) {
+      micStatus.textContent = 'Could not change microphone level';
+      await syncMic();
+    }
+  }, 60);
+});
+
+micMuteButton.addEventListener('click', async () => {
+  const muted = !micState.muted;
+  renderMic({ muted });
+  try {
+    await window.pebble.setMicMuted(muted);
+    micStatus.textContent = muted ? 'Muted' : 'Ready';
+  } catch (error) {
+    renderMic({ muted: !muted });
+    micStatus.textContent = 'Could not change microphone mute';
+  }
+});
+
+micFormat.addEventListener('change', async () => {
+  const previous = micState.format;
+  try {
+    const format = await window.pebble.setMicFormat(micFormat.value);
+    renderMic({ format });
+    micStatus.textContent = `${format.label} applied`;
+  } catch (error) {
+    renderMic({ format: previous });
+    micStatus.textContent = 'Could not change audio quality';
+  }
+});
+
+micDefaultButton.addEventListener('click', async () => {
+  try {
+    await window.pebble.setMicDefault();
+    renderMic({ isDefault: true });
+    micStatus.textContent = 'Set as Windows default microphone';
+  } catch (error) {
+    micStatus.textContent = 'Could not set the default microphone';
+  }
+});
+
 async function initialize() {
   await Promise.all([
     syncAudio(),
@@ -477,6 +599,8 @@ async function initialize() {
   ]);
   window.setInterval(syncAudio, 2500);
   window.setInterval(syncLighting, 5000);
+  syncMic();
+  window.setInterval(syncMic, 5000);
   window.pebble.onAudioChanged(syncAudio);
   navigator.mediaDevices.addEventListener('devicechange', findDefaultOutput);
   window.pebble.onLightingPresence(async (connected) => {
@@ -487,6 +611,7 @@ async function initialize() {
     }
     lightingStatus.textContent = 'Speaker connected';
     await syncLighting();
+    await syncMic();
   });
 }
 

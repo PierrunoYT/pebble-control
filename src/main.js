@@ -2,6 +2,7 @@ const path = require('node:path');
 const { app, BrowserWindow, ipcMain, Menu, Tray, nativeImage, globalShortcut } = require('electron');
 const loudness = require('loudness');
 const lighting = require('./lighting');
+const capture = require('./capture');
 
 let mainWindow;
 let tray;
@@ -116,6 +117,12 @@ ipcMain.handle('lighting:set-direction', (_event, direction) => lighting.setDire
 ipcMain.handle('lighting:set-active-slot', (_event, index) => lighting.setActiveSlot(index));
 ipcMain.handle('device:set-output-target', (_event, target) => lighting.setOutputTarget(target));
 
+ipcMain.handle('mic:get-state', () => capture.getState());
+ipcMain.handle('mic:set-volume', (_event, volume) => capture.setVolume(volume));
+ipcMain.handle('mic:set-muted', (_event, muted) => capture.setMuted(muted));
+ipcMain.handle('mic:set-default', () => capture.setDefault());
+ipcMain.handle('mic:set-format', (_event, key) => capture.setFormat(key));
+
 function broadcast(channel, payload) {
   BrowserWindow.getAllWindows().forEach((window) => window.webContents.send(channel, payload));
 }
@@ -160,7 +167,10 @@ app.whenReady().then(() => {
 });
 
 app.on('before-quit', () => { quitting = true; });
-app.on('will-quit', () => globalShortcut.unregisterAll());
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
+  capture.stop();
+});
 
 app.on('window-all-closed', () => {
   // Windows are hidden rather than closed while the tray is present, so this

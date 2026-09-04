@@ -157,6 +157,44 @@
         </fieldset>
       </section>
 
+      <section class="recording-card panel" id="recordingCard" hidden>
+        <div class="panel-heading lighting-heading">
+          <div>
+            <p class="label">PEBBLE X PLUS</p>
+            <h2>Microphone</h2>
+          </div>
+          <div class="recording-status">
+            <strong id="micName">Microphone</strong>
+            <small id="micStatus">Finding microphone...</small>
+          </div>
+        </div>
+
+        <fieldset class="recording-controls" id="micControls" disabled>
+          <div class="mic-level">
+            <button class="icon-button" id="micMuteButton" type="button" aria-label="Mute microphone" aria-pressed="false">
+              <span class="icon volume-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+              </span>
+              <span class="icon muted-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M4 4l16 16"/></svg>
+              </span>
+            </button>
+            <label class="lighting-field mic-field">
+              <span>Level <strong><span id="micVolumeValue">--</span>%</strong></span>
+              <input id="micVolume" type="range" min="0" max="100" value="100" aria-label="Microphone level">
+            </label>
+          </div>
+          <label class="lighting-field">
+            <span>Audio quality</span>
+            <select id="micFormat" aria-label="Microphone audio quality"></select>
+          </label>
+          <div class="mic-default">
+            <button class="text-button mic-default-button" id="micDefaultButton" type="button">Set as default microphone</button>
+            <small id="micDefaultHint">Windows default microphone</small>
+          </div>
+        </fieldset>
+      </section>
+
       <section class="utility-bar panel">
         <div class="output-detail">
           <span class="utility-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span>

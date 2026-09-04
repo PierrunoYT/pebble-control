@@ -110,6 +110,22 @@ input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; transform: 
 .lighting-card { margin-top: 14px; padding: 24px 27px; border-radius: 20px; }
 .lighting-card.disconnected { opacity: .68; }
 .lighting-heading { gap: 24px; }
+.recording-card { margin-top: 14px; padding: 24px 27px; border-radius: 20px; }
+.recording-status { text-align: right; }
+.recording-status strong, .recording-status small { display: block; }
+.recording-status strong { font-size: 11px; }
+.recording-status small { margin-top: 2px; color: var(--muted); font-size: 9px; }
+.recording-status small.error { color: #ef846f; }
+.recording-controls { display: grid; grid-template-columns: 1.4fr 1fr auto; align-items: center; gap: 24px; min-width: 0; margin: 22px 0 0; padding: 19px 20px; border: 1px solid var(--line); border-radius: 15px; background: rgba(0,0,0,.12); }
+.recording-controls:disabled { opacity: .48; }
+.mic-level { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.mic-level .icon-button { flex: 0 0 auto; }
+.mic-field { flex: 1; }
+.mic-field input { margin-top: 7px; }
+.mic-default { display: grid; gap: 4px; justify-items: end; text-align: right; }
+.mic-default-button { margin: 0; font-size: 11px; }
+.mic-default-button[hidden] { display: none; }
+.mic-default small { color: var(--muted); font-size: 9px; }
 .slot-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
 .slot-row button { display: grid; gap: 2px; min-width: 96px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 11px; background: rgba(255,255,255,.025); color: var(--text); text-align: left; cursor: pointer; transition: .18s ease; }
 .slot-row button small { color: var(--muted); font-size: 8px; letter-spacing: .12em; text-transform: uppercase; }
@@ -181,6 +197,9 @@ footer { display: flex; justify-content: space-between; padding: 17px 4px 0; col
   .intro { max-width: 430px; }
   .control-grid { grid-template-columns: 1fr; }
   .lighting-controls { grid-template-columns: 1fr 1fr; }
+  .recording-controls { grid-template-columns: 1fr 1fr; }
+  .mic-level { grid-column: 1 / -1; }
+  .mic-default { justify-items: start; text-align: left; }
   .brightness-field { grid-column: 1 / -1; }
   .device-status { max-width: 46%; }
 }
@@ -197,6 +216,9 @@ footer { display: flex; justify-content: space-between; padding: 17px 4px 0; col
   .lighting-heading { align-items: flex-start; flex-direction: column; }
   .lighting-power { width: 100%; justify-content: space-between; }
   .lighting-controls { grid-template-columns: 1fr; padding: 17px; }
+  .recording-card { padding: 22px 20px; }
+  .recording-controls { grid-template-columns: 1fr; padding: 17px; }
+  .recording-status { text-align: left; }
   .color-control { flex-wrap: wrap; }
   .brightness-field { grid-column: auto; }
   .utility-bar { align-items: flex-start; gap: 18px; flex-direction: column; }

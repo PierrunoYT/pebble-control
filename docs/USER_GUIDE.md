@@ -47,6 +47,14 @@ Presets are fixed volume shortcuts. Selecting one also unmutes the output.
 
 Presets do not apply equalization or change the sound profile.
 
+### Microphone
+
+The Pebble X Plus also appears in Windows as a microphone. When it is connected by USB, a **Microphone** panel shows its level, a mute button, the audio quality Windows uses for it, and whether it is the Windows default microphone.
+
+- Drag **Level** or use the mute button to change how loud the microphone records.
+- **Audio quality** lists the formats the microphone accepts. The Pebble X Plus reports one, 16 bit at 48000 Hz mono, so the list is fixed on that model.
+- Select **Set as default microphone** to make Windows use it for recording and calls.
+
 ### Speaker Output
 
 When a Creative Pebble X Plus is connected by USB, a **Speaker output** switch appears in the bottom bar. Choose **Speakers** to play through the satellites or **Headphones** to route audio to the headphone jack on the right speaker. The switch is hidden for other connections.

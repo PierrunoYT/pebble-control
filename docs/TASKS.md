@@ -30,6 +30,9 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
 - [x] **Output target switch**
   Add a Speakers / Headphones toggle using command `0x2c`: operation `01` reads the current mask, `00` plus a 32-bit mask sets it, `02` lists supported masks. The speaker reports `2` (speakers) and `4` (headphone jack). Verified round-trip on hardware.
 
+- [x] **Microphone panel**
+  Level, mute, audio quality, and set-as-default for the Pebble X Plus capture endpoint, matching Creative App's Recording page. Uses a PowerShell Core Audio bridge because `loudness` only covers the default render endpoint.
+
 ## App
 
 - [x] **Tray icon**

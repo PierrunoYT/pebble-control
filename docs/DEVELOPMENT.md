@@ -15,6 +15,8 @@ Pebble Control/
 |-- src/
 |   |-- main.js       Electron main process and IPC handlers
 |   |-- lighting.js   Restricted Pebble X Plus HID protocol implementation
+|   |-- capture.js    Microphone control through the PowerShell audio bridge
+|   |-- audio-bridge.ps1  Core Audio COM bridge run as a child process
 |   |-- preload.js    Restricted renderer bridge
 |   |-- index.html    Application markup
 |   |-- styles.css    Responsive visual design
@@ -41,6 +43,10 @@ The application is Windows-focused. The renderer can load on other platforms, bu
 ## Architecture
 
 ### Main Process
+
+### Audio Bridge
+
+Microphone control needs Windows Core Audio interfaces that the `loudness` package does not expose. `src/capture.js` starts `src/audio-bridge.ps1` as a long-lived PowerShell child and exchanges one JSON line per request. The script defines the COM interfaces in C# through `Add-Type` (`IMMDeviceEnumerator`, `IAudioEndpointVolume`, `IAudioClient`, and the undocumented `IPolicyConfig` used for the default device and the shared-mode format) with `[PreserveSig]` so HRESULTs are returned rather than thrown. Because PowerShell cannot open a script inside `app.asar`, the script is copied to the temp directory on first use. The first call takes about 300 ms while the types compile; later calls take a few milliseconds. Accepted formats are probed once per endpoint with `IsFormatSupported` in exclusive mode and cached.
 
 `src/main.js` registers the global shortcuts Ctrl+Alt+Up, Ctrl+Alt+Down, and Ctrl+Alt+M through Electron's `globalShortcut` and releases them on quit. A registration that fails because another app holds the combination is logged and skipped.
 
@@ -135,6 +141,11 @@ The window uses `contextIsolation`, disables renderer Node.js integration, and r
 | `setLightingDirection({ direction, bouncing })` | `{ direction, directionSupport, mode }` | Set the active effect's direction (1 to 4) and bounce flag, validated against the effect's capability record |
 | `setLightingSlot(index)` | full lighting state | Make slot 1 to 4 active and return the state of that slot |
 | `setOutputTarget(target)` | `{ outputTarget, outputTargets }` | Route audio to the speakers (`2`) or the headphone jack (`4`) |
+| `getMicState()` | microphone state object | Read the Pebble capture endpoint's name, level, mute, default status, current format, and accepted formats |
+| `setMicVolume(volume)` | `number` | Set the capture level from 0 to 100 |
+| `setMicMuted(muted)` | `boolean` | Mute or unmute the capture endpoint |
+| `setMicDefault()` | `true` | Make the Pebble the Windows default microphone for all roles |
+| `setMicFormat(key)` | format object | Set the shared-mode format from the accepted list |
 | `onLightingPresence(callback)` | - | Subscribe to speaker attach and detach events; the main process polls HID presence once a second |
 | `onAudioChanged(callback)` | - | Fired after a global shortcut changes volume or mute, so the display refreshes without waiting for the poll |
 
