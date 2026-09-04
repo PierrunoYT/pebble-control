@@ -4,6 +4,7 @@ const loudness = require('loudness');
 const lighting = require('./lighting');
 const capture = require('./capture');
 const deviceInfo = require('./device-info');
+const effects = require('./effects');
 
 let mainWindow;
 let tray;
@@ -124,6 +125,10 @@ ipcMain.handle('device:open-link', (_event, url) => {
   if (!deviceInfo.isAllowedLink(url)) throw new TypeError('Link not allowed');
   return shell.openExternal(url);
 });
+
+ipcMain.handle('effects:get-state', (_event, output) => effects.getState(output));
+ipcMain.handle('effects:set', (_event, id, changes, output) => effects.setEffect(id, changes || {}, output));
+ipcMain.handle('effects:set-master', (_event, enabled, output) => effects.setMaster(Boolean(enabled), output));
 
 ipcMain.handle('mic:get-state', () => capture.getState());
 ipcMain.handle('mic:set-volume', (_event, volume) => capture.setVolume(volume));

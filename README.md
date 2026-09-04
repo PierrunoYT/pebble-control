@@ -22,6 +22,7 @@ With a Creative Pebble X Plus connected by USB:
 - Speaker or headphone output switch
 - Microphone level, mute, audio quality, and set as Windows default
 - Device details: firmware, serial, driver version, and Creative support links
+- Acoustic Engine effects: Surround, Crystalizer, Bass, Smart Volume, and Dialog+ for speakers and headphones
 - Instant response to the speaker being plugged in or removed
 
 ## Requirements
@@ -70,4 +71,4 @@ Build output is written to `dist/`. See the [Development Guide](docs/DEVELOPMENT
 
 Windows audio controls work with any output routed to Creative Pebble speakers. Direct hardware control is limited to the Creative Pebble X Plus with USB VID/PID `041E:329A`; other Pebble models are not sent hardware commands.
 
-The Pebble X Plus does not accept volume, mute, EQ, or subwoofer commands over USB, so those stay with Windows. Creative App's Acoustic Engine, equalizer, and sound modes are processing in Creative's audio driver rather than speaker features, and are not replicated here. Both speakers always show the same lighting; the hardware has no per-speaker colors. Speaker power, gain mode, and the physical volume knob remain outside the app's control.
+The Pebble X Plus does not accept volume, mute, EQ, or subwoofer commands over USB, so those stay with Windows. Creative App's Acoustic Engine effects run in Creative's audio driver; Pebble Control configures them through the Windows effects property store, so the driver must be installed. Creative's graphic equalizer and sound mode presets are not exposed yet. Both speakers always show the same lighting; the hardware has no per-speaker colors. Speaker power, gain mode, and the physical volume knob remain outside the app's control.

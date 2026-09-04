@@ -49,6 +49,16 @@ Presets are fixed volume shortcuts. Selecting one also unmutes the output.
 
 Presets do not apply equalization or change the sound profile.
 
+### Acoustic Engine
+
+Creative's Acoustic Engine effects run in the Creative audio driver on the PC and shape everything that plays through the Pebble X Plus. The **Acoustic Engine** panel controls the same settings as Creative App's Acoustic Engine page.
+
+- **Processing** at the top turns all effects on or off at once. Turning on any effect turns processing on.
+- **Speakers** and **Headphones** hold separate settings; pick the one that matches how you listen.
+- Each effect has its own switch and level. **Surround** widens the sound stage, **Crystalizer** restores detail lost to compression, **Bass** fills in low frequencies, **Smart Volume** evens out loudness jumps and offers Normal, Loud, and Night modes, and **Dialog+** lifts voices.
+
+Changes apply immediately and are shared with Creative App, which shows the same values.
+
 ### Microphone
 
 The Pebble X Plus also appears in Windows as a microphone. When it is connected by USB, a **Microphone** panel shows its level, a mute button, the audio quality Windows uses for it, and whether it is the Windows default microphone.

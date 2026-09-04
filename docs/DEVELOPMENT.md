@@ -19,6 +19,7 @@ Pebble Control/
 |   |-- lighting.js   Restricted Pebble X Plus HID protocol implementation
 |   |-- capture.js    Microphone control through the PowerShell audio bridge
 |   |-- device-info.js  Device identity, driver version, and support links
+|   |-- effects.js    Acoustic Engine control through the effects property store
 |   |-- audio-bridge.ps1  Core Audio COM bridge run as a child process
 |   |-- preload.js    Restricted renderer bridge
 |   |-- index.html    Application markup
@@ -50,6 +51,23 @@ The application is Windows-focused. The renderer can load on other platforms, bu
 ### Audio Bridge
 
 Microphone control needs Windows Core Audio interfaces that the `loudness` package does not expose. `src/capture.js` starts `src/audio-bridge.ps1` as a long-lived PowerShell child and exchanges one JSON line per request. The script defines the COM interfaces in C# through `Add-Type` (`IMMDeviceEnumerator`, `IAudioEndpointVolume`, `IAudioClient`, and the undocumented `IPolicyConfig` used for the default device and the shared-mode format) with `[PreserveSig]` so HRESULTs are returned rather than thrown. Because PowerShell cannot open a script inside `app.asar`, the script is copied to the temp directory on first use. The first call takes about 300 ms while the types compile; later calls take a few milliseconds. Accepted formats are probed once per endpoint with `IsFormatSupported` in exclusive mode and cached.
+
+### Acoustic Engine
+
+Creative App configures its driver effects through Windows' `IAudioSystemEffectsPropertyStore`, activated on the render endpoint with a `VT_CLSID` activation parameter naming a context GUID, and then the per-user store opened with `STGM_READWRITE`. No elevation is needed and Creative's APO applies changes at once. `src/effects.js` does the same through the bridge's `effects-get` and `effects-set` operations. The contexts and property keys below were recovered from `Creative.Platform.Devices.dll` and verified against the live store, whose values matched Creative App's display.
+
+| Item | GUID, ID | Type |
+|------|----------|------|
+| Speakers context | `852311bc-1afb-454e-92ca-c35252cacaaf` | activation parameter |
+| Headphones context | `3f5f306b-a033-4f19-843d-1c44a736ff4d` | activation parameter |
+| Master on/off | `3c14eccc-4a1f-47f7-91dd-bf45af920a4d`, 0 | bool |
+| Surround enable, level | `5b4777a4-8ad4-4d34-893a-df34da0e56ca`, 0 and `a5a78ea4-c156-4db7-85aa-81cff1c3f192`, 0 | bool, float 0 to 1 |
+| Crystalizer enable, level | `3cd83c04-868f-4f08-8d75-b4625ffe3b31`, 0 and `0f03f0bb-72c7-4ec1-8422-7b8d7410694a`, 0 | bool, float 0 to 1 |
+| Bass enable, strength | `f67cf426-f8cb-4a40-bdac-580802e3e193`, 0 and `dd527e35-21a5-4ca6-ab90-8ad464fb55e3`, 0 | bool, float 0 to 100 |
+| Smart Volume enable, level, mode | `9ad782d7-f46e-465c-8df5-3cda75424987`, 0; `80b0c7bb-0989-434e-af5b-fb9020f471b3`, 0; `e6ec3743-ddd2-4817-8466-b433761dcf9d`, 0 | bool, float 0 to 1, float 0 normal 1 loud 2 night |
+| Dialog+ enable, level | `ea3137f9-be10-4eaa-8fce-a36988bca7dd`, 0 and `a79717e9-81cf-4272-adc6-d12b69b389a0`, 0 | bool, float 0 to 1 |
+
+The same store also holds Creative's ten-band graphic equalizer gains (`2b88c76d-d07c-4e97-8922-1bac9f6d5935`, 0 to 9) and the bass crossover frequency (`3f23dbc5-12d1-4d62-89ed-bc458337e0fc`), which are not exposed yet.
 
 `src/main.js` registers the global shortcuts Ctrl+Alt+Up, Ctrl+Alt+Down, and Ctrl+Alt+M through Electron's `globalShortcut` and releases them on quit. A registration that fails because another app holds the combination is logged and skipped.
 
@@ -146,6 +164,9 @@ The window uses `contextIsolation`, disables renderer Node.js integration, and r
 | `setOutputTarget(target)` | `{ outputTarget, outputTargets }` | Route audio to the speakers (`2`) or the headphone jack (`4`) |
 | `getDeviceInfo()` | device info object | Model, serial, firmware (from the USB release number), firmware build word, Creative audio driver version, and support links |
 | `openLink(url)` | - | Open one of the fixed Creative support links in the browser; any other URL is refused |
+| `getEffectsState(output)` | effects state object | Read the Acoustic Engine master switch and each effect's enabled flag, level (0 to 100), and mode for `speakers` or `headphones` |
+| `setEffect(id, changes, output)` | effects state object | Apply `enabled`, `level`, or `mode` to one effect; enabling also turns the master on |
+| `setEffectsMaster(enabled, output)` | effects state object | Turn Acoustic Engine processing on or off |
 | `getMicState()` | microphone state object | Read the Pebble capture endpoint's name, level, mute, default status, current format, and accepted formats |
 | `setMicVolume(volume)` | `number` | Set the capture level from 0 to 100 |
 | `setMicMuted(muted)` | `boolean` | Mute or unmute the capture endpoint |

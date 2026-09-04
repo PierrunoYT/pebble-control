@@ -36,6 +36,12 @@ Open work for Pebble Control, grouped by area. Protocol details for the lighting
 - [x] **Device panel**
   Model, serial, firmware version, USB ID, Creative audio driver version, and support links, matching the readable parts of Creative App's device settings.
 
+- [x] **Acoustic Engine panel**
+  Surround, Crystalizer, Bass, Smart Volume, and Dialog+ with per-output settings, written to Creative's APO through Windows' system-effects user store.
+
+- [ ] **Graphic equalizer**
+  The same store holds Creative's ten-band equalizer (`2b88c76d-d07c-4e97-8922-1bac9f6d5935`, 0 to 9, float dB) and enable flag. Creative App ships 70 presets in its product data folder. Add a band editor and preset picker.
+
 ## Not Planned
 
 - **Firmware and driver updates.** Creative App checks its own servers and installs firmware through a Qualcomm HID DFU interface on usage page `FF99`. Replicating either means depending on Creative's infrastructure and risking a bricked speaker. The Device panel links to Creative's download page instead.

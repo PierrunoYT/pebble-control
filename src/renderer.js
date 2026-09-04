@@ -590,6 +590,166 @@ micDefaultButton.addEventListener('click', async () => {
   }
 });
 
+// Acoustic Engine card: Creative's driver effects, stored per output path.
+const effectsCard = document.querySelector('#effectsCard');
+const effectsStatus = document.querySelector('#effectsStatus');
+const effectsMaster = document.querySelector('#effectsMaster');
+const effectsTabs = document.querySelector('#effectsTabs');
+const effectsGrid = document.querySelector('#effectsGrid');
+
+let effectsState = { connected: false, output: 'speakers', master: false, effects: {} };
+let effectsOutput = 'speakers';
+const effectLevelTimers = new Map();
+let lastEffectEdit = 0;
+
+function buildEffectCard(id, effect) {
+  const card = document.createElement('div');
+  card.className = 'effect';
+  card.dataset.effect = id;
+
+  const head = document.createElement('div');
+  head.className = 'effect-head';
+  const title = document.createElement('strong');
+  title.textContent = effect.label;
+  const toggle = document.createElement('label');
+  toggle.className = 'launch-setting';
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.setAttribute('aria-label', `${effect.label} on or off`);
+  input.addEventListener('change', () => applyEffect(id, { enabled: input.checked }));
+  const knob = document.createElement('span');
+  knob.className = 'toggle';
+  knob.setAttribute('aria-hidden', 'true');
+  toggle.append(input, knob);
+  head.append(title, toggle);
+
+  const level = document.createElement('label');
+  level.className = 'effect-level';
+  const levelText = document.createElement('span');
+  levelText.append('Level ', Object.assign(document.createElement('strong'), { textContent: '--' }));
+  const slider = document.createElement('input');
+  slider.type = 'range';
+  slider.min = '0';
+  slider.max = '100';
+  slider.setAttribute('aria-label', `${effect.label} level`);
+  slider.addEventListener('input', () => {
+    const value = Number(slider.value);
+    levelText.querySelector('strong').textContent = `${value}%`;
+    slider.style.setProperty('--volume', `${value}%`);
+    lastEffectEdit = Date.now();
+    clearTimeout(effectLevelTimers.get(id));
+    effectLevelTimers.set(id, setTimeout(() => applyEffect(id, { level: value }), 120));
+  });
+  level.append(levelText, slider);
+
+  card.append(head, level);
+
+  if (Array.isArray(effect.modes)) {
+    const modes = document.createElement('div');
+    modes.className = 'effect-modes';
+    modes.setAttribute('role', 'group');
+    modes.setAttribute('aria-label', `${effect.label} mode`);
+    effect.modes.forEach((mode) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.mode = mode;
+      button.textContent = mode.charAt(0).toUpperCase() + mode.slice(1);
+      button.addEventListener('click', () => applyEffect(id, { mode }));
+      modes.append(button);
+    });
+    card.append(modes);
+  }
+
+  const description = document.createElement('small');
+  description.className = 'effect-description';
+  description.textContent = effect.description;
+  card.append(description);
+  return card;
+}
+
+function renderEffects(nextState) {
+  effectsState = { ...effectsState, ...nextState };
+  const connected = Boolean(effectsState.connected);
+  effectsCard.hidden = !connected && !effectsState.everSeen;
+  effectsGrid.disabled = !connected;
+  effectsMaster.disabled = !connected;
+  effectsMaster.checked = connected && effectsState.master;
+  [...effectsTabs.querySelectorAll('button')].forEach((button) => {
+    button.setAttribute('aria-pressed', String(button.dataset.output === effectsOutput));
+  });
+  if (!connected) return;
+
+  const entries = Object.entries(effectsState.effects || {});
+  const existing = [...effectsGrid.querySelectorAll('.effect')].map((card) => card.dataset.effect);
+  if (existing.join() !== entries.map(([id]) => id).join()) {
+    effectsGrid.replaceChildren(...entries.map(([id, effect]) => buildEffectCard(id, effect)));
+  }
+  entries.forEach(([id, effect]) => {
+    const card = effectsGrid.querySelector(`[data-effect="${id}"]`);
+    card.classList.toggle('on', effect.enabled && effectsState.master);
+    card.querySelector('input[type="checkbox"]').checked = effect.enabled;
+    const slider = card.querySelector('input[type="range"]');
+    if (effect.level !== null) {
+      slider.value = effect.level;
+      slider.style.setProperty('--volume', `${effect.level}%`);
+      card.querySelector('.effect-level strong').textContent = `${effect.level}%`;
+    }
+    card.querySelectorAll('.effect-modes button').forEach((button) => {
+      button.setAttribute('aria-pressed', String(button.dataset.mode === effect.mode));
+    });
+  });
+}
+
+async function syncEffects() {
+  try {
+    const nextState = await window.pebble.getEffectsState(effectsOutput);
+    if (Date.now() - lastEffectEdit > 1500) renderEffects({ ...nextState, everSeen: effectsState.everSeen || nextState.connected });
+    effectsStatus.textContent = nextState.connected
+      ? (nextState.master ? 'Effects active' : 'Effects bypassed')
+      : 'Connect the speaker by USB';
+    effectsStatus.classList.remove('error');
+  } catch (error) {
+    console.error('Effects sync failed:', error);
+    renderEffects({ connected: false });
+    effectsStatus.textContent = 'Acoustic Engine unavailable';
+    effectsStatus.classList.add('error');
+  }
+}
+
+async function applyEffect(id, changes) {
+  lastEffectEdit = Date.now();
+  try {
+    renderEffects(await window.pebble.setEffect(id, changes, effectsOutput));
+    const label = effectsState.effects[id]?.label || id;
+    effectsStatus.textContent = changes.enabled !== undefined
+      ? `${label} ${changes.enabled ? 'on' : 'off'}`
+      : `${label} updated`;
+  } catch (error) {
+    effectsStatus.textContent = `Could not change ${id}`;
+    await syncEffects();
+  }
+}
+
+effectsMaster.addEventListener('change', async () => {
+  const enabled = effectsMaster.checked;
+  renderEffects({ master: enabled });
+  try {
+    renderEffects(await window.pebble.setEffectsMaster(enabled, effectsOutput));
+    effectsStatus.textContent = enabled ? 'Effects active' : 'Effects bypassed';
+  } catch (error) {
+    renderEffects({ master: !enabled });
+    effectsStatus.textContent = 'Could not change Acoustic Engine';
+  }
+});
+
+effectsTabs.addEventListener('click', async (event) => {
+  const button = event.target.closest('button');
+  if (!button || button.dataset.output === effectsOutput) return;
+  effectsOutput = button.dataset.output;
+  lastEffectEdit = 0;
+  await syncEffects();
+});
+
 // Device card: identity from the USB descriptor, the Creative driver version
 // from Windows, and links to Creative's support pages.
 const deviceCard = document.querySelector('#deviceCard');
@@ -652,6 +812,8 @@ async function initialize() {
   window.setInterval(syncLighting, 5000);
   syncMic();
   window.setInterval(syncMic, 5000);
+  syncEffects();
+  window.setInterval(syncEffects, 5000);
   syncDeviceInfo();
   window.pebble.onAudioChanged(syncAudio);
   navigator.mediaDevices.addEventListener('devicechange', findDefaultOutput);
@@ -665,6 +827,7 @@ async function initialize() {
     lightingStatus.textContent = 'Speaker connected';
     await syncLighting();
     await syncMic();
+    await syncEffects();
     await syncDeviceInfo();
   });
 }

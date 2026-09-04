@@ -110,7 +110,23 @@ input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; transform: 
 .lighting-card { margin-top: 14px; padding: 24px 27px; border-radius: 20px; }
 .lighting-card.disconnected { opacity: .68; }
 .lighting-heading { gap: 24px; }
-.recording-card, .device-card { margin-top: 14px; padding: 24px 27px; border-radius: 20px; }
+.recording-card, .device-card, .effects-card { margin-top: 14px; padding: 24px 27px; border-radius: 20px; }
+.effects-tabs { margin-top: 18px; }
+.effects-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; min-width: 0; margin: 16px 0 0; padding: 0; border: 0; }
+.effects-grid:disabled { opacity: .48; }
+.effect { display: grid; gap: 10px; align-content: start; padding: 16px 15px; border: 1px solid var(--line); border-radius: 15px; background: rgba(0,0,0,.12); transition: .18s ease; }
+.effect.on { border-color: rgba(201,245,90,.35); }
+.effect-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.effect-head strong { font-size: 12px; }
+.effect-head .launch-setting { gap: 0; }
+.effect-level { display: grid; gap: 7px; color: var(--muted); font-size: 9px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.effect-level span { display: flex; justify-content: space-between; }
+.effect-level strong { color: var(--text); }
+.effect-modes { display: flex; gap: 4px; }
+.effect-modes button { flex: 1; padding: 5px 0; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--muted); font-size: 9px; font-weight: 600; letter-spacing: .04em; cursor: pointer; }
+.effect-modes button[aria-pressed="true"] { border-color: rgba(201,245,90,.42); background: var(--acid-soft); color: var(--acid); }
+.effect-modes button:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; }
+.effect small.effect-description { color: var(--muted); font-size: 9px; line-height: 1.4; }
 .device-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-top: 22px; padding: 19px 20px; border: 1px solid var(--line); border-radius: 15px; background: rgba(0,0,0,.12); }
 .device-facts { display: grid; gap: 12px; margin: 0; }
 .device-facts div { display: flex; justify-content: space-between; gap: 16px; }
@@ -209,6 +225,7 @@ footer { display: flex; justify-content: space-between; padding: 17px 4px 0; col
   .lighting-controls { grid-template-columns: 1fr 1fr; }
   .recording-controls { grid-template-columns: 1fr 1fr; }
   .mic-level { grid-column: 1 / -1; }
+  .effects-grid { grid-template-columns: repeat(2, 1fr); }
   .device-grid { grid-template-columns: 1fr; }
   .mic-default { justify-items: start; text-align: left; }
   .brightness-field { grid-column: 1 / -1; }
@@ -230,6 +247,8 @@ footer { display: flex; justify-content: space-between; padding: 17px 4px 0; col
   .recording-card, .device-card { padding: 22px 20px; }
   .device-grid { padding: 17px; }
   .recording-controls { grid-template-columns: 1fr; padding: 17px; }
+  .effects-card { padding: 22px 20px; }
+  .effects-grid { grid-template-columns: 1fr; }
   .recording-status { text-align: left; }
   .color-control { flex-wrap: wrap; }
   .brightness-field { grid-column: auto; }

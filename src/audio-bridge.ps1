@@ -125,6 +125,32 @@ namespace PebbleAudio
     [ComImport, Guid("870af99c-171d-4f9e-af0d-e63df40c2bc9")]
     public class PolicyConfigClient { }
 
+    // Windows 11 per-endpoint store for audio processing object settings. Creative's
+    // Acoustic Engine reads its parameters from the user store for a context GUID.
+    [Guid("302AE7F9-D7E0-43E4-971B-1F8293613D2A"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    public interface IAudioSystemEffectsPropertyStore
+    {
+        [PreserveSig] int OpenDefaultPropertyStore(uint access, out IRawPropertyStore store);
+        [PreserveSig] int OpenUserPropertyStore(uint access, out IRawPropertyStore store);
+        [PreserveSig] int OpenVolatilePropertyStore(uint access, out IRawPropertyStore store);
+        [PreserveSig] int ResetUserPropertyStore();
+        [PreserveSig] int ResetVolatilePropertyStore();
+        [PreserveSig] int RegisterPropertyChangeNotification(IntPtr client);
+        [PreserveSig] int UnregisterPropertyChangeNotification(IntPtr client);
+    }
+
+    // IPropertyStore again, but with raw buffers so PROPERTYKEY and PROPVARIANT
+    // layouts are handled byte for byte.
+    [Guid("886d8eeb-8cf2-4446-8d02-cdba1dbdcf99"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    public interface IRawPropertyStore
+    {
+        [PreserveSig] int GetCount(out int count);
+        [PreserveSig] int GetAt(int index, IntPtr key);
+        [PreserveSig] int GetValue(IntPtr key, IntPtr value);
+        [PreserveSig] int SetValue(IntPtr key, IntPtr value);
+        [PreserveSig] int Commit();
+    }
+
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct WaveFormatExtensible
     {
@@ -174,20 +200,22 @@ namespace PebbleAudio
             return Marshal.PtrToStringUni(value.pointerValue);
         }
 
-        static string DefaultId()
+        static string DefaultId(EDataFlow flow)
         {
             IMMDevice device;
-            if (Enumerator().GetDefaultAudioEndpoint(EDataFlow.Capture, ERole.Console, out device) != 0) return "";
+            if (Enumerator().GetDefaultAudioEndpoint(flow, ERole.Console, out device) != 0) return "";
             string id; device.GetId(out id); return id;
         }
 
-        public static List<CaptureDevice> List()
+        public static List<CaptureDevice> List() { return List(EDataFlow.Capture); }
+
+        public static List<CaptureDevice> List(EDataFlow flow)
         {
             var result = new List<CaptureDevice>();
             IMMDeviceCollection collection;
-            Marshal.ThrowExceptionForHR(Enumerator().EnumAudioEndpoints(EDataFlow.Capture, ActiveState, out collection));
+            Marshal.ThrowExceptionForHR(Enumerator().EnumAudioEndpoints(flow, ActiveState, out collection));
             int count; collection.GetCount(out count);
-            string defaultId = DefaultId();
+            string defaultId = DefaultId(flow);
             for (int i = 0; i < count; i++)
             {
                 IMMDevice device; collection.Item(i, out device);
@@ -292,6 +320,103 @@ namespace PebbleAudio
             finally { Marshal.FreeCoTaskMem(pointer); }
         }
     }
+
+    public static class Effects
+    {
+        static readonly Guid StoreInterface = new Guid("302AE7F9-D7E0-43E4-971B-1F8293613D2A");
+        const int VtEmpty = 0, VtR4 = 4, VtBool = 11, VtUI4 = 19, VtClsid = 72;
+
+        static IRawPropertyStore OpenUserStore(string id, Guid context, uint access)
+        {
+            IMMDevice device;
+            Marshal.ThrowExceptionForHR(((IMMDeviceEnumerator)new MMDeviceEnumerator()).GetDevice(id, out device));
+            // The activation parameter is a PROPVARIANT of VT_CLSID naming the context.
+            IntPtr guidPointer = Marshal.AllocCoTaskMem(16);
+            IntPtr parameter = Marshal.AllocCoTaskMem(24);
+            try
+            {
+                Marshal.Copy(context.ToByteArray(), 0, guidPointer, 16);
+                for (int i = 0; i < 24; i++) Marshal.WriteByte(parameter, i, 0);
+                Marshal.WriteInt16(parameter, 0, VtClsid);
+                Marshal.WriteIntPtr(parameter, 8, guidPointer);
+                object instance; Guid iid = StoreInterface;
+                Marshal.ThrowExceptionForHR(device.Activate(ref iid, 23, parameter, out instance));
+                IRawPropertyStore store;
+                Marshal.ThrowExceptionForHR(((IAudioSystemEffectsPropertyStore)instance).OpenUserPropertyStore(access, out store));
+                return store;
+            }
+            finally
+            {
+                Marshal.FreeCoTaskMem(parameter);
+                Marshal.FreeCoTaskMem(guidPointer);
+            }
+        }
+
+        static void FillKey(IntPtr buffer, Guid key, int pid)
+        {
+            Marshal.Copy(key.ToByteArray(), 0, buffer, 16);
+            Marshal.WriteInt32(buffer, 16, pid);
+        }
+
+        // Returns one "type:value" string per key: bool:true, float:0.5, uint:3, or empty.
+        public static string[] Read(string id, Guid context, Guid[] keys, int[] pids)
+        {
+            var store = OpenUserStore(id, context, 0);
+            var results = new string[keys.Length];
+            IntPtr keyBuffer = Marshal.AllocCoTaskMem(24);
+            IntPtr valueBuffer = Marshal.AllocCoTaskMem(24);
+            try
+            {
+                for (int i = 0; i < keys.Length; i++)
+                {
+                    for (int z = 0; z < 24; z++) { Marshal.WriteByte(keyBuffer, z, 0); Marshal.WriteByte(valueBuffer, z, 0); }
+                    FillKey(keyBuffer, keys[i], pids[i]);
+                    store.GetValue(keyBuffer, valueBuffer);
+                    short vt = Marshal.ReadInt16(valueBuffer, 0);
+                    int raw = Marshal.ReadInt32(valueBuffer, 8);
+                    if (vt == VtBool) results[i] = "bool:" + ((short)raw != 0 ? "true" : "false");
+                    else if (vt == VtR4) results[i] = "float:" + BitConverter.ToSingle(BitConverter.GetBytes(raw), 0).ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    else if (vt == VtUI4) results[i] = "uint:" + ((uint)raw).ToString();
+                    else results[i] = "empty";
+                }
+            }
+            finally
+            {
+                Marshal.FreeCoTaskMem(keyBuffer);
+                Marshal.FreeCoTaskMem(valueBuffer);
+            }
+            return results;
+        }
+
+        public static void Write(string id, Guid context, Guid key, int pid, string type, float value)
+        {
+            var store = OpenUserStore(id, context, 2);
+            IntPtr keyBuffer = Marshal.AllocCoTaskMem(24);
+            IntPtr valueBuffer = Marshal.AllocCoTaskMem(24);
+            try
+            {
+                for (int z = 0; z < 24; z++) { Marshal.WriteByte(keyBuffer, z, 0); Marshal.WriteByte(valueBuffer, z, 0); }
+                FillKey(keyBuffer, key, pid);
+                if (type == "bool")
+                {
+                    Marshal.WriteInt16(valueBuffer, 0, VtBool);
+                    Marshal.WriteInt16(valueBuffer, 8, (short)(value != 0 ? -1 : 0));
+                }
+                else
+                {
+                    Marshal.WriteInt16(valueBuffer, 0, VtR4);
+                    Marshal.WriteInt32(valueBuffer, 8, BitConverter.ToInt32(BitConverter.GetBytes(value), 0));
+                }
+                Marshal.ThrowExceptionForHR(store.SetValue(keyBuffer, valueBuffer));
+                Marshal.ThrowExceptionForHR(store.Commit());
+            }
+            finally
+            {
+                Marshal.FreeCoTaskMem(keyBuffer);
+                Marshal.FreeCoTaskMem(valueBuffer);
+            }
+        }
+    }
 }
 '@
 
@@ -303,6 +428,19 @@ function Respond($object) {
 function Handle($request) {
     switch ($request.op) {
         'list' { return @{ devices = @([PebbleAudio.Capture]::List() | ForEach-Object { @{ id = $_.Id; name = $_.Name; interface = $_.Interface; isDefault = $_.IsDefault } }) } }
+        'list-render' { return @{ devices = @([PebbleAudio.Capture]::List([PebbleAudio.EDataFlow]::Render) | ForEach-Object { @{ id = $_.Id; name = $_.Name; interface = $_.Interface; isDefault = $_.IsDefault } }) } }
+        'effects-get' {
+            $keys = [Guid[]]@($request.keys | ForEach-Object { [Guid]$_.guid })
+            $pids = [int[]]@($request.keys | ForEach-Object { [int]$_.pid })
+            $raw = [PebbleAudio.Effects]::Read($request.id, [Guid]$request.context, $keys, $pids)
+            $values = @{}
+            for ($i = 0; $i -lt $raw.Length; $i++) { $values[$request.keys[$i].name] = $raw[$i] }
+            return @{ values = $values }
+        }
+        'effects-set' {
+            [PebbleAudio.Effects]::Write($request.id, [Guid]$request.context, [Guid]$request.guid, [int]$request.pid, [string]$request.type, [float]$request.value)
+            return @{ ok = $true }
+        }
         'state' {
             $format = [PebbleAudio.Capture]::GetFormat($request.id)
             return @{

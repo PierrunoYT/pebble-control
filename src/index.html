@@ -157,6 +157,28 @@
         </fieldset>
       </section>
 
+      <section class="effects-card panel" id="effectsCard" hidden>
+        <div class="panel-heading lighting-heading">
+          <div>
+            <p class="label">PEBBLE X PLUS</p>
+            <h2>Acoustic Engine</h2>
+          </div>
+          <label class="launch-setting lighting-power">
+            <span><strong>Processing</strong><small id="effectsStatus">Finding effects...</small></span>
+            <input id="effectsMaster" type="checkbox" disabled>
+            <span class="toggle" aria-hidden="true"></span>
+          </label>
+        </div>
+
+        <div class="effects-tabs segmented" role="group" aria-label="Acoustic Engine output" id="effectsTabs">
+          <button type="button" data-output="speakers" aria-pressed="true">Speakers</button>
+          <button type="button" data-output="headphones" aria-pressed="false">Headphones</button>
+        </div>
+
+        <fieldset class="effects-grid" id="effectsGrid" disabled></fieldset>
+        <p class="device-note">These effects are Creative's audio processing in the Windows driver, so they shape every sound that plays through the Pebble. They are stored per output: Speakers and Headphones keep separate settings.</p>
+      </section>
+
       <section class="recording-card panel" id="recordingCard" hidden>
         <div class="panel-heading lighting-heading">
           <div>

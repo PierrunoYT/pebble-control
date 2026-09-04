@@ -173,4 +173,6 @@ async function setFormat(requestedKey) {
   return format;
 }
 
-module.exports = { getState, setVolume, setMuted, setDefault, setFormat, stop, pickPebbleDevice, formatLabel, formatKey, FORMAT_CANDIDATES };
+module.exports = {
+  getState, setVolume, setMuted, setDefault, setFormat, stop, pickPebbleDevice, formatLabel, formatKey, FORMAT_CANDIDATES, bridgeCall: call
+};
