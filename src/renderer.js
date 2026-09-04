@@ -14,6 +14,10 @@ const lightingStatus = document.querySelector('#lightingStatus');
 const lightingMode = document.querySelector('#lightingMode');
 const lightingSpeed = document.querySelector('#lightingSpeed');
 const lightingSpeedField = document.querySelector('#lightingSpeedField');
+const lightingDirection = document.querySelector('#lightingDirection');
+const lightingDirectionField = document.querySelector('#lightingDirectionField');
+
+const DIRECTION_LABELS = { 1: 'Left to right', 2: 'Right to left', 3: 'Top to bottom', 4: 'Bottom to top' };
 const lightingColors = document.querySelector('#lightingColors');
 const lightingColorsTitle = document.querySelector('#lightingColorsTitle');
 const lightingColorsHint = document.querySelector('#lightingColorsHint');
@@ -58,6 +62,7 @@ function renderLighting(nextState) {
   lightingSpeed.disabled = !hasSpeed;
   lightingSpeed.setAttribute('aria-disabled', String(!hasSpeed));
   if (hasSpeed) lightingSpeed.value = String(lightingState.speed);
+  renderDirection();
   renderColorStops(Array.isArray(lightingState.colors) ? lightingState.colors : []);
   renderOutputTarget(connected);
   lightingBrightness.value = lightingState.brightness;
@@ -69,6 +74,33 @@ function renderLighting(nextState) {
       option.disabled = !lightingState.supportedModes.includes(Number(option.value));
     });
   }
+}
+
+// Option values are the direction number for looping, or "bounce".
+function renderDirection() {
+  const support = lightingState.directionSupport;
+  const current = lightingState.direction;
+  const available = Boolean(support && current);
+  lightingDirectionField.classList.toggle('unsupported', !available);
+  lightingDirection.disabled = !available;
+  lightingDirection.setAttribute('aria-disabled', String(!available));
+
+  const values = [];
+  if (available) {
+    if (support.leftRight) values.push('1', '2');
+    if (support.upDown) values.push('3', '4');
+    if (support.bouncing) values.push('bounce');
+  }
+  const existing = [...lightingDirection.options].map((option) => option.value);
+  if (existing.join() !== values.join()) {
+    lightingDirection.replaceChildren(...values.map((value) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = value === 'bounce' ? 'Bounce' : DIRECTION_LABELS[value];
+      return option;
+    }));
+  }
+  if (available) lightingDirection.value = current.bouncing ? 'bounce' : String(current.direction);
 }
 
 function renderOutputTarget(connected) {
@@ -232,6 +264,22 @@ lightingSpeed.addEventListener('change', async () => {
   } catch (error) {
     renderLighting({ speed: previousSpeed });
     lightingStatus.textContent = 'Could not change effect speed';
+  }
+});
+
+lightingDirection.addEventListener('change', async () => {
+  const previous = lightingState.direction;
+  const value = lightingDirection.value;
+  const request = value === 'bounce'
+    ? { direction: previous?.direction || 1, bouncing: true }
+    : { direction: Number(value), bouncing: false };
+  renderLighting({ direction: request });
+  try {
+    renderLighting(await window.pebble.setLightingDirection(request));
+    lightingStatus.textContent = `${lightingDirection.selectedOptions[0].textContent} direction applied`;
+  } catch (error) {
+    renderLighting({ direction: previous });
+    lightingStatus.textContent = 'Could not change effect direction';
   }
 });
 

@@ -16,6 +16,7 @@ const OUTPUT_OPERATION = Object.freeze({ set: 0x00, get: 0x01, getSupported: 0x0
 const OPERATION = Object.freeze({
   getInfo: 0x20,
   getSupportedModes: 0x21,
+  getSupportedCustomization: 0x22,
   setEnabled: 0x25,
   getEnabled: 0x26,
   setBrightness: 0x27,
@@ -162,6 +163,37 @@ function readColors(device, activeIndex) {
   }
 }
 
+// Reads which direction axes and bouncing an effect accepts, or null when the
+// effect has no direction. The capability record is a bitmask: bit 0 left and
+// right, bit 1 up and down, bit 2 bouncing.
+function readDirectionSupport(device, mode) {
+  try {
+    const payload = query(device, [OPERATION.getSupportedCustomization, mode]);
+    let offset = 3;
+    for (let i = 0; i < payload[2] && offset + 2 <= payload.length; i += 1) {
+      const [type, length] = payload.slice(offset, offset + 2);
+      if (type === CUSTOMIZATION.direction && length >= 1) {
+        const mask = payload[offset + 2];
+        return { leftRight: (mask & 1) !== 0, upDown: (mask & 2) !== 0, bouncing: (mask & 4) !== 0 };
+      }
+      offset += 2 + length;
+    }
+  } catch (error) {
+    // Fall through: the effect reports no customizations.
+  }
+  return null;
+}
+
+// Returns { direction, bouncing } for the active effect, or null.
+function readDirection(device, activeIndex) {
+  try {
+    const payload = query(device, [OPERATION.getCustomization, activeIndex, CUSTOMIZATION.direction]);
+    return { direction: payload[3], bouncing: payload[4] === 1 };
+  } catch (error) {
+    return null;
+  }
+}
+
 // Returns the effect speed in milliseconds, or null when the effect has none.
 function readSpeed(device, activeIndex) {
   try {
@@ -217,6 +249,8 @@ async function getState() {
     const mode = query(device, [OPERATION.getMode, activeIndex])[2];
     const colors = readColors(device, activeIndex);
     const speed = readSpeed(device, activeIndex);
+    const direction = readDirection(device, activeIndex);
+    const directionSupport = direction ? readDirectionSupport(device, mode) : null;
     const output = readOutputTargets(device);
 
     return {
@@ -232,6 +266,8 @@ async function getState() {
       colors,
       speed,
       speeds: SPEED_PRESETS,
+      direction,
+      directionSupport,
       supportedModes,
       modes: MODES
     };
@@ -268,7 +304,36 @@ function setMode(requestedMode) {
     const activeIndex = query(device, [OPERATION.getActiveIndex])[1];
     update(device, [OPERATION.setMode, activeIndex, mode]);
     const colors = readColors(device, activeIndex);
-    return { mode, colors, color: colors[0] || '#ffffff', speed: readSpeed(device, activeIndex) };
+    const direction = readDirection(device, activeIndex);
+    return {
+      mode,
+      colors,
+      color: colors[0] || '#ffffff',
+      speed: readSpeed(device, activeIndex),
+      direction,
+      directionSupport: direction ? readDirectionSupport(device, mode) : null
+    };
+  });
+}
+
+// Sets the active effect's direction. Directions are 1 left to right,
+// 2 right to left, 3 top to bottom, 4 bottom to top. With bouncing on the
+// firmware ignores the direction byte and reports the effect's default.
+function setDirection(requested) {
+  const direction = Number(requested?.direction);
+  const bouncing = Boolean(requested?.bouncing);
+  if (![1, 2, 3, 4].includes(direction)) throw new TypeError('Direction must be 1 to 4');
+  return withDevice((device) => {
+    const activeIndex = query(device, [OPERATION.getActiveIndex])[1];
+    const mode = query(device, [OPERATION.getMode, activeIndex])[2];
+    const support = readDirectionSupport(device, mode);
+    if (!support) throw new TypeError('The active lighting effect has no direction');
+    const axisAllowed = direction <= 2 ? support.leftRight : support.upDown;
+    if (!axisAllowed || (bouncing && !support.bouncing)) {
+      throw new TypeError('The active lighting effect does not support that direction');
+    }
+    update(device, [OPERATION.setCustomization, activeIndex, CUSTOMIZATION.direction, direction, bouncing ? 1 : 0]);
+    return { direction: readDirection(device, activeIndex), directionSupport: support, mode };
   });
 }
 
@@ -343,4 +408,6 @@ function setOutputTarget(requestedTarget) {
   });
 }
 
-module.exports = { getState, setEnabled, setBrightness, setMode, setColor, setColors, setSpeed, setOutputTarget };
+module.exports = {
+  getState, setEnabled, setBrightness, setMode, setColor, setColors, setSpeed, setDirection, setOutputTarget
+};

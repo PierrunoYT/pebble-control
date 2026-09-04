@@ -56,6 +56,7 @@ ipcMain.handle('lighting:set-mode', (_event, mode) => lighting.setMode(mode));
 ipcMain.handle('lighting:set-color', (_event, color) => lighting.setColor(color));
 ipcMain.handle('lighting:set-colors', (_event, colors) => lighting.setColors(colors));
 ipcMain.handle('lighting:set-speed', (_event, speed) => lighting.setSpeed(speed));
+ipcMain.handle('lighting:set-direction', (_event, direction) => lighting.setDirection(direction));
 ipcMain.handle('device:set-output-target', (_event, target) => lighting.setOutputTarget(target));
 
 app.whenReady().then(() => {

@@ -13,5 +13,6 @@ contextBridge.exposeInMainWorld('pebble', {
   setLightingColor: (color) => ipcRenderer.invoke('lighting:set-color', color),
   setLightingColors: (colors) => ipcRenderer.invoke('lighting:set-colors', colors),
   setLightingSpeed: (speed) => ipcRenderer.invoke('lighting:set-speed', speed),
+  setLightingDirection: (direction) => ipcRenderer.invoke('lighting:set-direction', direction),
   setOutputTarget: (target) => ipcRenderer.invoke('device:set-output-target', target)
 });
