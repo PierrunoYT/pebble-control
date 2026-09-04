@@ -5,7 +5,9 @@
 - Electron for the Windows desktop shell
 - Plain HTML, CSS, and JavaScript for the renderer
 - [`loudness`](https://www.npmjs.com/package/loudness) for Windows master volume access
-- [`node-hid`](https://www.npmjs.com/package/node-hid) for Pebble X Plus USB lighting access
+- [`node-hid`](https://www.npmjs.com/package/node-hid) for Pebble X Plus USB lighting and output control
+- Windows PowerShell 5.1, bundled with Windows, for the Core Audio microphone bridge
+- Node's built-in test runner for the unit tests
 - `electron-builder` for the NSIS installer
 
 ## Project Layout
@@ -169,13 +171,17 @@ The renderer uses `navigator.mediaDevices.enumerateDevices()` only to display an
 
 Before a release:
 
-1. Run `npm run check` and `npm test`. The tests in `test/` run the lighting module against a scripted fake speaker (`test/fake-hid.js`) and cover report framing, colour decoding, rejection handling, capability parsing, slots, and the output target, so protocol changes can be checked without hardware.
-2. Run `npm start` and test volume, mute, every preset, RGB controls, and launch at startup.
-3. Change volume outside the app and confirm that the UI refreshes.
-4. Switch the Windows default output and confirm that controls target the new endpoint.
-5. Run `npm run dist`.
-6. Launch `dist/win-unpacked/Pebble Control.exe` and repeat the audio and RGB checks.
-7. Install with the generated setup executable and verify the Start menu and uninstall entries.
+1. Run `npm run check` and `npm test`. The tests in `test/` run the lighting module against a scripted fake speaker (`test/fake-hid.js`) and cover report framing, colour decoding, rejection handling, capability parsing, slots, and the output target, plus the microphone device selection and format labels, so protocol changes can be checked without hardware.
+2. Run `npm start` and test volume, mute, every preset, and launch at startup.
+3. With a Pebble X Plus on USB: switch slots and effects, edit colours, speed, and direction, toggle lighting power, switch between Speakers and Headphones, and change the microphone level and mute.
+4. Unplug and reconnect the USB cable; the lighting and microphone panels should disable and re-enable within a second or two.
+5. Close the window and confirm the tray icon remains, its menu reflects mute and lighting state, and Quit exits.
+6. Press Ctrl+Alt+Up, Ctrl+Alt+Down, and Ctrl+Alt+M with the window hidden and confirm the volume display has caught up when it is shown again.
+7. Change volume outside the app and confirm that the UI refreshes.
+8. Switch the Windows default output to a non-Pebble device and confirm the amber warning, then switch back.
+9. Run `npm run dist`.
+10. Launch `dist/win-unpacked/Pebble Control.exe` and repeat the audio, RGB, and microphone checks; the microphone bridge must start from the packaged app.
+11. Install with the generated setup executable and verify the Start menu and uninstall entries.
 
 ## Release Process
 
@@ -183,14 +189,16 @@ Before a release:
 2. Move pending entries in `CHANGELOG.md` into a dated release section.
 3. Complete the verification checklist.
 4. Run `npm run dist`.
-5. Distribute the installer from `dist/`.
+5. Tag the commit (`git tag v<version>` and `git push --tags`) and attach `dist/Pebble Control Setup <version>.exe` to a GitHub release. The `dist/` folder is ignored by git, so the installer only reaches users through releases.
 
 Code signing is not configured. Publicly distributed installers should be signed with a trusted Windows code-signing certificate.
 
 ## Design Constraints
 
 - Do not describe presets as EQ profiles; they only set volume.
-- Limit direct hardware claims to the validated Pebble X Plus RGB implementation.
-- Keep operating-system access in the main process.
-- Validate all values received through IPC.
+- Limit direct hardware claims to what has been verified on the Pebble X Plus: lighting, the output target, and the Windows microphone endpoint. The speaker accepts no volume, mute, EQ, or subwoofer commands over USB.
+- Keep operating-system access in the main process. The renderer never sees device paths, raw HID reports, or the audio bridge.
+- Validate all values received through IPC, and validate again against what the device reports supported before writing to it.
+- Read the speaker's capability records rather than hardcoding per-effect behaviour.
+- Restore any device state a probe or test changes; the speaker persists slots, colours, and formats across power cycles.
 - Preserve keyboard access, focus visibility, and reduced-motion behavior when changing the interface.

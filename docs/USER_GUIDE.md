@@ -4,7 +4,9 @@
 
 Pebble Control provides a compact control surface for the current Windows default audio output. When a Creative Pebble is selected as that output, changes made in the app affect sound played through the speakers.
 
-The app controls Windows audio on all Pebble models. When a Creative Pebble X Plus is connected by USB, it can also control the speaker's RGB lighting. The physical volume knob, speaker power, hardware gain mode, and equalizer settings remain outside the app's control.
+The app controls Windows audio on all Pebble models. When a Creative Pebble X Plus is connected by USB, it can also control the speaker's RGB lighting, switch between the speakers and the headphone jack, and manage the speaker's microphone. The physical volume knob, speaker power, hardware gain mode, and equalizer settings remain outside the app's control.
+
+Pebble Control keeps running in the notification area when its window is closed, and offers global keyboard shortcuts for volume and mute.
 
 ## Installation
 
@@ -21,7 +23,7 @@ Windows may show a reputation warning for an unsigned build. Review the publishe
 3. Select the Pebble, Bluetooth connection, or sound-card output connected to the speakers.
 4. Open Pebble Control.
 
-The selected endpoint appears at the top of the app. If Windows does not provide its name, the app displays **Windows default output**.
+The selected endpoint appears at the top of the app. If Windows does not provide its name, the app displays **Windows default output**. For a Pebble X Plus, use the USB connection: it carries audio, the microphone, and the lighting and output controls, while Bluetooth and the 3.5 mm input only carry audio.
 
 ## Controls
 
@@ -125,6 +127,14 @@ Check **Settings > Apps > Startup** and ensure Pebble Control is enabled. Corpor
 ### The Output Pill Is Amber
 
 The pill in the top bar shows the Windows default output. It turns amber, and the bottom bar reads "Not a Pebble", when that output is not a Creative Pebble device. Volume changes still apply to whatever Windows is using. Pick the Pebble in Windows sound settings to route audio to the speakers; the pill updates as soon as the default output changes.
+
+### The Microphone Panel Is Missing or Unavailable
+
+The panel appears only when Windows lists the Pebble X Plus microphone, which needs the USB connection. If the panel shows "Microphone control unavailable", Windows PowerShell could not start or was blocked by policy; Pebble Control uses it to reach the Windows audio system for microphone settings. Check that `powershell.exe` runs from a command prompt.
+
+### A Keyboard Shortcut Does Nothing
+
+Another app already holds that combination. Windows gives a global shortcut to the first app that registers it. Close or reconfigure the other app, then restart Pebble Control.
 
 ### Lighting Controls Are Unavailable
 
